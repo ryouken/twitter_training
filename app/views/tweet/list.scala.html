@@ -1,5 +1,5 @@
 @* このテンプレートの引数 *@
-@(tweets: Seq[models.Tables.TweetsRow])
+@(tweets: Seq[models.Tables.TweetsRow], users: Seq[models.Tables.UsersRow])
 
 @* main.scala.htmlを呼び出す *@
 @main("ユーザ一覧") {
@@ -12,7 +12,8 @@
         <table class="table table-hover">
             <thead>
                 <tr>
-                    <th>ID</th>
+                    <th>tweet_id</th>
+                    <th>user_id</th>
                     <th>本文</th>
                     <th>&nbsp;</th>
                 </tr>
@@ -20,14 +21,17 @@
             <tbody>
                 @* ツイートの一覧をループで出力 *@
                 @tweets.map { tweet =>
+                    @users.filter(u => u.userId == tweet.userId).map { user =>
                     <tr>
                         <td>@tweet.tweetId</td>
+                        <td>@user.userName</td>
                         <td><a href="@routes.TweetController.edit(Some(tweet.tweetId))">@tweet.tweetText</a></td>
                         <td>@helper.form(routes.TweetController.remove(tweet.tweetId)){
                             <input type="submit" value="削除" class="btn btn-danger btn-xs"/>
                         }
                         </td>
                     </tr>
+                    }
                 }
             </tbody>
         </table>

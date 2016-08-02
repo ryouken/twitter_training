@@ -50,7 +50,7 @@ trait Tables {
   lazy val Relationships = new TableQuery(tag => new Relationships(tag))
 
   /** Entity class storing rows of table Tweets
-   *  @param tweetId Database column tweet_id SqlType(INT), PrimaryKey
+   *  @param tweetId Database column tweet_id SqlType(INT), AutoInc, PrimaryKey
    *  @param userId Database column user_id SqlType(INT)
    *  @param tweetText Database column tweet_text SqlType(VARCHAR), Length(300,true)
    *  @param timestamp Database column timestamp SqlType(DATETIME) */
@@ -66,8 +66,8 @@ trait Tables {
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(tweetId), Rep.Some(userId), Rep.Some(tweetText), Rep.Some(timestamp)).shaped.<>({r=>import r._; _1.map(_=> TweetsRow.tupled((_1.get, _2.get, _3.get, _4.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
-    /** Database column tweet_id SqlType(INT), PrimaryKey */
-    val tweetId: Rep[Int] = column[Int]("tweet_id", O.PrimaryKey)
+    /** Database column tweet_id SqlType(INT), AutoInc, PrimaryKey */
+    val tweetId: Rep[Int] = column[Int]("tweet_id", O.AutoInc, O.PrimaryKey)
     /** Database column user_id SqlType(INT) */
     val userId: Rep[Int] = column[Int]("user_id")
     /** Database column tweet_text SqlType(VARCHAR), Length(300,true) */
@@ -82,7 +82,7 @@ trait Tables {
   lazy val Tweets = new TableQuery(tag => new Tweets(tag))
 
   /** Entity class storing rows of table Users
-   *  @param userId Database column user_id SqlType(INT), PrimaryKey
+   *  @param userId Database column user_id SqlType(INT), AutoInc, PrimaryKey
    *  @param userName Database column user_name SqlType(VARCHAR), Length(255,true)
    *  @param password Database column password SqlType(CHAR), Length(30,false)
    *  @param profileText Database column profile_text SqlType(VARCHAR), Length(300,true), Default(None) */
@@ -98,8 +98,8 @@ trait Tables {
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(userId), Rep.Some(userName), Rep.Some(password), profileText).shaped.<>({r=>import r._; _1.map(_=> UsersRow.tupled((_1.get, _2.get, _3.get, _4)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
-    /** Database column user_id SqlType(INT), PrimaryKey */
-    val userId: Rep[Int] = column[Int]("user_id", O.PrimaryKey)
+    /** Database column user_id SqlType(INT), AutoInc, PrimaryKey */
+    val userId: Rep[Int] = column[Int]("user_id", O.AutoInc, O.PrimaryKey)
     /** Database column user_name SqlType(VARCHAR), Length(255,true) */
     val userName: Rep[String] = column[String]("user_name", O.Length(255,varying=true))
     /** Database column password SqlType(CHAR), Length(30,false) */

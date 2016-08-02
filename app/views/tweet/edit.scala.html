@@ -9,7 +9,7 @@
     @form(tweetForm("tweet_id").value.map(x => routes.TweetController.update).getOrElse(routes.TweetController.create), 'class -> "container", 'role -> "form") {
         <fieldset>
             <div class="form-group">
-            @inputText(tweetForm("name"), '_label -> "ツイート")
+            @inputText(tweetForm("text"), '_label -> "ツイート")
             </div>
             @* IDがある場合（更新の場合）のみhiddenを出力する *@
             @tweetForm("id").value.map { value =>

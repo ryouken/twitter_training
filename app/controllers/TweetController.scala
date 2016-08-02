@@ -19,14 +19,12 @@ import slick.driver.MySQLDriver.api._
 
 object TweetController {
   // フォームの値を格納するケースクラス
-  case class TweetForm(tweet_id: Option[Long], user_id: Option[Int], tweet_text: String)
+  case class TweetForm(text: String)
 
   // formから送信されたデータ ⇔ ケースクラスの変換を行う
   val tweetForm = Form(
     mapping(
-      "tweet_id"        -> optional(longNumber),
-      "user_id"         -> optional(number),
-      "tweet_text"      -> nonEmptyText(maxLength = 140)
+      "text" -> nonEmptyText(maxLength = 140)
     )(TweetForm.apply)(TweetForm.unapply)
   )
 }
@@ -41,9 +39,11 @@ class TweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     */
   def list = Action.async { implicit rs =>
     // IDの昇順にすべてのユーザ情報を取得
-    db.run(Tweets.result).map { tweets =>
+    db.run(Tweets.result).flatMap { tweets =>
+      db.run(Users.result).map { users =>
       // 一覧画面を表示
-      Ok(views.html.tweet.list(tweets))
+      Ok(views.html.tweet.list(tweets, users))
+      }
     }
   }
 
@@ -57,7 +57,7 @@ class TweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
       // IDからユーザ情報を1件取得
       db.run(Tweets.filter(t => t.tweetId === id.get.bind).result.head).map { tweet =>
         // 値をフォームに詰める
-        tweetForm.fill(TweetForm(Some(tweet.tweetId), Some(tweet.userId), tweet.tweetText))
+        tweetForm.fill(TweetForm(tweet.tweetText))
       }
     } else {
       // リクエストパラメータにIDが存在しない場合
@@ -89,12 +89,12 @@ class TweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
       },
       // OKの場合
       form  => {
-        // ユーザを登録
-        val tweet = TweetsRow(0, form.user_id.get, form.tweet_text, timestamp)
+          Logger.debug("create_ok")
+        // ツイートを登録
+        val tweet = TweetsRow(0, 1, form.text, timestamp)
         db.run(Tweets += tweet).map { _ =>
           // 一覧画面へリダイレクト
-          Logger.debug("create_ok")
-          Redirect(routes.HomeController.index)
+          Redirect(routes.TweetController.list)
         }
       }
     )
@@ -118,7 +118,7 @@ class TweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
       // OKの場合
       form  => {
         // ユーザを登録
-        val tweet = TweetsRow(0, form.user_id.get, form.tweet_text, timestamp)
+        val tweet = TweetsRow(0, 0 , form.text, timestamp)
         db.run(Tweets += tweet).map { _ =>
           // 一覧画面へリダイレクト
           Redirect(routes.HomeController.index)
@@ -130,6 +130,12 @@ class TweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
   /**
     * 削除実行
     */
-  def remove(id: Long) = TODO
+  def remove(id: Int) = Action.async { implicit rs =>
+    // ユーザを削除
+    db.run(Tweets.filter(t => t.tweetId === id.bind).delete).map { _ =>
+      // 一覧画面へリダイレクト
+      Redirect(routes.TweetController.list)
+    }
+  }
 
 }
