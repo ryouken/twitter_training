@@ -1,0 +1,25 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+# An example controller showing a sample home page
+GET     /                           controllers.HomeController.index
+#GET     /                           controllers.Application.index
+# An example controller showing how to use dependency injection
+GET     /count                      controllers.CountController.count
+# An example controller showing how to write asynchronous code
+GET     /message                    controllers.AsyncController.message
+
+# Mapping to /tweet/list
+GET     /tweet/list                  controllers.TweetController.list
+# Mapping to /tweet/edit or /tweet/edit?id=<number>
+GET     /tweet/edit                  controllers.TweetController.edit(id: Option[Long] ?= None)
+# Mapping to /tweet/create
+POST    /tweet/create                controllers.TweetController.create
+# Mapping to /tweet/update
+POST    /tweet/update                controllers.TweetController.update
+# Mapping to /tweet/remove/<number>
+POST    /tweet/remove/:id            controllers.TweetController.remove(id: Long)
+
+# Map static resources from the /public folder to the /assets URL path
+GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
