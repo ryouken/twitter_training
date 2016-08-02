@@ -11,15 +11,15 @@ GET     /count                      controllers.CountController.count
 GET     /message                    controllers.AsyncController.message
 
 # Mapping to /tweet/list
-GET     /tweet/list                  controllers.TweetController.list
+GET     /tweet/list                 controllers.TweetController.list
 # Mapping to /tweet/edit or /tweet/edit?id=<number>
-GET     /tweet/edit                  controllers.TweetController.edit(id: Option[Long] ?= None)
+GET     /tweet/edit                 controllers.TweetController.edit(id: Option[Int] ?= None)
 # Mapping to /tweet/create
-POST    /tweet/create                controllers.TweetController.create
+POST    /tweet/create               controllers.TweetController.create
 # Mapping to /tweet/update
-POST    /tweet/update                controllers.TweetController.update
+POST    /tweet/update               controllers.TweetController.update
 # Mapping to /tweet/remove/<number>
-POST    /tweet/remove/:id            controllers.TweetController.remove(id: Long)
+POST    /tweet/remove/:id           controllers.TweetController.remove(id: Int)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)

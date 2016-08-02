@@ -1,0 +1,24 @@
+@(tweetForm: Form[controllers.TweetController.TweetForm], users: Seq[models.Tables.UsersRow])(implicit messages: Messages)
+
+@* テンプレートで利用可能なヘルパーをインポート *@
+@import helper._
+
+@main("ユーザ作成") {
+
+    @* IDがある場合は更新処理、ない場合は登録処理を呼ぶ *@
+    @form(tweetForm("tweet_id").value.map(x => routes.TweetController.update).getOrElse(routes.TweetController.create), 'class -> "container", 'role -> "form") {
+        <fieldset>
+            <div class="form-group">
+            @inputText(tweetForm("name"), '_label -> "ツイート")
+            </div>
+            @* IDがある場合（更新の場合）のみhiddenを出力する *@
+            @tweetForm("id").value.map { value =>
+                <input type="hidden" name="id" value="@value" />
+            }
+            <div>
+                <input type="submit" value="保存" class="btn btn-success">
+            </div>
+        </fieldset>
+    }
+
+}
