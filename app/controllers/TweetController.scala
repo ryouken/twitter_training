@@ -76,7 +76,6 @@ class TweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     * 登録実行
     */
   def create = Action.async { implicit rs =>
-    Logger.debug("create")
   val timestamp = new Timestamp(System.currentTimeMillis())
     // リクエストの内容をバインド
     tweetForm.bindFromRequest.fold(
@@ -89,7 +88,6 @@ class TweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
       },
       // OKの場合
       form  => {
-          Logger.debug("create_ok")
         // ツイートを登録
         val tweet = TweetsRow(0, 1, form.text, timestamp)
         db.run(Tweets += tweet).map { _ =>
@@ -104,8 +102,6 @@ class TweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     * 更新実行
     */
   def update = Action.async { implicit rs =>
-
-    Logger.debug("update")
     val timestamp = new Timestamp(System.currentTimeMillis())
     // リクエストの内容をバインド
     tweetForm.bindFromRequest.fold(
@@ -118,7 +114,7 @@ class TweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
       // OKの場合
       form  => {
         // ユーザを登録
-        val tweet = TweetsRow(0, 0 , form.text, timestamp)
+        val tweet = TweetsRow(0, 0, form.text, timestamp)
         db.run(Tweets += tweet).map { _ =>
           // 一覧画面へリダイレクト
           Redirect(routes.HomeController.index)
