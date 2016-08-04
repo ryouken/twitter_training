@@ -1,14 +1,12 @@
 package controllers
 
 import java.sql.Timestamp
-
 import play.api.mvc._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.db.slick._
 import slick.driver.JdbcProfile
 import models.Tables._
 import javax.inject.Inject
-
 import scala.concurrent.Future
 import slick.driver.MySQLDriver.api._
 import play.api.libs.json._
@@ -18,14 +16,6 @@ object JsonController {
   case class TweetForm(text: String)
 
   implicit val tweetFormFormat = Json.format[TweetForm]
-
-//  implicit val tweetFormFormat = new Reads[TweetForm]{
-//    def reads(js: JsValue): TweetForm = {
-//      TweetForm(
-//        text = (js\"text").as[String]
-//      )
-//    }
-//  }
 
   // TweetsRowをJSONに変換するためのWritesを定義
   implicit val tweetsRowWritesFormat = new Writes[TweetsRow]{
@@ -58,7 +48,6 @@ class JsonController @Inject()(val dbConfigProvider: DatabaseConfigProvider) ext
   /**
     * ユーザ登録
     */
-//  def create = TODO
   def create = Action.async(parse.json) { implicit rs =>
     val timestamp = new Timestamp(System.currentTimeMillis())
     rs.body.validate[TweetForm].map { form =>

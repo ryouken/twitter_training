@@ -1,0 +1,19 @@
+@(userForm: Form[controllers.UserController.UserForm])(implicit messages: Messages)
+
+@import helper._
+
+@main("ログインページ") {
+
+    @helper.form(action = routes.UserController.authenticate, 'class -> "container", 'role -> "form") {
+        <fieldset>
+            <div class="form-group">
+            @inputText(userForm("user_name"), '_label -> "ユーザネーム")
+            </div>
+            <div class="form-group">
+            @inputText(userForm("password"), '_label -> "パスワード")
+                <input type="submit" value="ログイン" class="btn btn-success">
+            </div>
+        </fieldset>
+    }
+
+}

@@ -1,7 +1,6 @@
 package controllers
 
 import java.sql.Timestamp
-
 import play.api.mvc._
 import play.api.data._
 import play.api.data.Forms._
@@ -11,9 +10,7 @@ import play.api.db.slick._
 import slick.driver.JdbcProfile
 import models.Tables._
 import javax.inject.Inject
-
 import play.api.Logger
-
 import scala.concurrent.Future
 import slick.driver.MySQLDriver.api._
 
@@ -66,8 +63,8 @@ class TweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
 
     form.flatMap { form =>
       // 会社一覧を取得
-      db.run(Users.sortBy(_.userName).result).map { companies =>
-        Ok(views.html.tweet.edit(form, companies))
+      db.run(Users.sortBy(_.userName).result).map { users =>
+        Ok(views.html.tweet.edit(form, users))
       }
     }
   }
@@ -81,7 +78,7 @@ class TweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     tweetForm.bindFromRequest.fold(
       // エラーの場合
       error => {
-        db.run(Tweets.sortBy(t => t.tweetId).result).map { users =>
+        db.run(Tweets.result).map { users =>
           Logger.debug("create_error", error = new Throwable)
           Redirect(routes.TweetController.list)
         }
@@ -102,6 +99,7 @@ class TweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     * 更新実行
     */
   def update = Action.async { implicit rs =>
+    Logger.debug("---update---")
     val timestamp = new Timestamp(System.currentTimeMillis())
     // リクエストの内容をバインド
     tweetForm.bindFromRequest.fold(

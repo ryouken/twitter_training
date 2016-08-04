@@ -9,11 +9,25 @@ POST    /tweet/create               controllers.TweetController.create
 POST    /tweet/update               controllers.TweetController.update
 POST    /tweet/remove/:id           controllers.TweetController.remove(id: Int)
 
+# User
+GET     /user/list                 controllers.UserController.list
+GET     /user/edit                 controllers.UserController.edit(id: Option[Int] ?= None)
+POST    /user/create               controllers.UserController.create
+POST    /user/update               controllers.UserController.update
+POST    /user/remove/:id           controllers.UserController.remove(id: Int)
+GET     /user/login                controllers.UserController.login
+GET     /user/authentication       controllers.UserController.authenticate
+
+# Follow
+GET     /follow/list                controllers.FollowController.list
+GET     /follow/create              controllers.FollowController.create
+GET     /follow/remove              controllers.FollowController.remove
+
 # JSON API
-GET         /json/list              controllers.JsonController.list
-POST        /json/create            controllers.JsonController.create
-POST        /json/update            controllers.JsonController.update
-POST        /json/remove/:id        controllers.JsonController.remove(id: Int)
+GET     /json/list                  controllers.JsonController.list
+POST    /json/create                controllers.JsonController.create
+POST    /json/update                controllers.JsonController.update
+POST    /json/remove/:id            controllers.JsonController.remove(id: Int)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
