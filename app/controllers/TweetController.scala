@@ -44,28 +44,25 @@ class TweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     }
   }
 
+  def mylist(id: Int) = Action.async { implicit rs =>
+    // IDの昇順にすべてのユーザ情報を取得
+    db.run(Tweets.result).flatMap { tweets =>
+      db.run(Users.filter(t => t.userId === id.bind).result).map { users =>
+      // 一覧画面を表示
+      Ok(views.html.tweet.mylist(tweets, users))
+      }
+    }
+  }
+
   /**
     * 編集画面表示
     */
 
-  def edit(id: Option[Int]) = Action.async { implicit rs =>
-    // リクエストパラメータにIDが存在する場合
-    val form = if(id.isDefined) {
-      // IDからユーザ情報を1件取得
-      db.run(Tweets.filter(t => t.tweetId === id.get.bind).result.head).map { tweet =>
-        // 値をフォームに詰める
-        tweetForm.fill(TweetForm(tweet.tweetText))
-      }
-    } else {
-      // リクエストパラメータにIDが存在しない場合
-      Future { tweetForm }
-    }
+  def edit = Action.async { implicit rs =>
+    val form = Future { tweetForm }
 
-    form.flatMap { form =>
-      // 会社一覧を取得
-      db.run(Users.sortBy(_.userName).result).map { users =>
-        Ok(views.html.tweet.edit(form, users))
-      }
+    form.map { form =>
+        Ok(views.html.tweet.edit(form))
     }
   }
 
@@ -90,32 +87,6 @@ class TweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
         db.run(Tweets += tweet).map { _ =>
           // 一覧画面へリダイレクト
           Redirect(routes.TweetController.list)
-        }
-      }
-    )
-  }
-
-  /**
-    * 更新実行
-    */
-  def update = Action.async { implicit rs =>
-    Logger.debug("---update---")
-    val timestamp = new Timestamp(System.currentTimeMillis())
-    // リクエストの内容をバインド
-    tweetForm.bindFromRequest.fold(
-      // エラーの場合
-      error => {
-        db.run(Users.sortBy(t => t.userId).result).map { users =>
-          BadRequest(views.html.tweet.edit(error, users))
-        }
-      },
-      // OKの場合
-      form  => {
-        // ユーザを登録
-        val tweet = TweetsRow(0, 0, form.text, timestamp)
-        db.run(Tweets += tweet).map { _ =>
-          // 一覧画面へリダイレクト
-          Redirect(routes.HomeController.index)
         }
       }
     )

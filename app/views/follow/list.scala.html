@@ -1,0 +1,36 @@
+@* このテンプレートの引数 *@
+@(relationships: Seq[models.Tables.RelationshipsRow], users: Seq[models.Tables.UsersRow])
+
+@* main.scala.htmlを呼び出す *@
+@main("フォロー一覧") {
+
+    <div>
+        <a href="@routes.UserController.edit()" class="btn btn-success" role="button">新規作成</a>
+    </div>
+
+    <div class="col-xs-6">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>フォローする人</th>
+                    <th>フォローされる人</th>
+                    <th>&nbsp;</th>
+                </tr>
+            </thead>
+            <tbody>
+                @* ユーザの一覧をループで出力 *@
+                @relationships.map { r =>
+                    <tr>
+                        <td>@r.followUserId</td>
+                        <td>@r.followedUserId</td>
+                        @*<td>@helper.form(routes.FollowController.remove(r.relationId)){*@
+                            @*<input type="submit" value="削除" class="btn btn-danger btn-xs"/>*@
+                        @*}*@
+                        @*</td>*@
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+}

@@ -31,7 +31,6 @@ object UserController {
   class UserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
                                  val messagesApi: MessagesApi) extends Controller
     with HasDatabaseConfigProvider[JdbcProfile] with I18nSupport {
-
     import UserController._
 
     /**
@@ -87,9 +86,11 @@ object UserController {
         form => {
           // ユーザを登録
           val user = UsersRow(0, form.user_name, form.password)
-          db.run(Users += user).map { _ =>
+          db.run(Users += user).flatMap { _ =>
+            db.run(Users.result).map { u =>
             // 一覧画面へリダイレクト
-            Redirect(routes.UserController.list)
+            Redirect(routes.TweetController.mylist(user.userId))
+            }
           }
         }
       )
@@ -112,9 +113,9 @@ object UserController {
         form => {
           // ユーザ情報を更新
           val user = UsersRow(form.user_id.get, form.user_name, form.password)
-          db.run(Users.filter(t => t.userId === user.userId.bind).update(user)).map { _ =>
+          db.run(Users.filter(t => t.userId === user.userId.bind).update(user)).map { u =>
             // 一覧画面にリダイレクト
-            Redirect(routes.UserController.list)
+            Redirect(routes.TweetController.mylist(user.userId))
           }
         }
       )
@@ -143,7 +144,7 @@ object UserController {
         formWithErrors => Future { BadRequest(views.html.user.login(formWithErrors)) },
         form => {
           db.run(Users.filter(t => t.userName === form.user_name && t.password === form.password).result.headOption).map {
-            case Some(_) => Redirect(routes.UserController.list)
+            case Some(user) => Redirect(routes.TweetController.mylist(user.userId))
             case _       => BadRequest(views.html.user.login(userForm))
           }
         }

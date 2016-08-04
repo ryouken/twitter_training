@@ -5,7 +5,7 @@
 @main("ツイート一覧") {
 
     <div>
-        <a href="@routes.TweetController.edit()" class="btn btn-success" role="button">新規作成</a>
+        <a href="@routes.TweetController.edit" class="btn btn-success" role="button">新規作成</a>
     </div>
 
     <div class="col-xs-6">
@@ -25,7 +25,7 @@
                         <tr>
                             <td>@tweet.tweetId</td>
                             <td>@user.userName</td>
-                            <td><a href="@routes.TweetController.edit(Some(tweet.tweetId))">@tweet.tweetText</a></td>
+                            <td>@tweet.tweetText</td>
                             <td>@helper.form(routes.TweetController.remove(tweet.tweetId)) {
                                 <input type="submit" value="削除" class="btn btn-danger btn-xs"/>
                             }
