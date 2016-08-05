@@ -4,8 +4,9 @@
 @* main.scala.htmlを呼び出す *@
 @main("自分のツイート一覧") {
 
+    @user.map { u =>
     <div>
-        <a href="@routes.TweetController.edit()" class="btn btn-success" role="button">新規作成</a>
+        <a href="@routes.TweetController.edit(u.userId)" class="btn btn-success" role="button">新規作成</a>
     </div>
 
     <div class="col-xs-6">
@@ -20,7 +21,6 @@
             </thead>
             <tbody>
                 @* ユーザの一覧をループで出力 *@
-                @user.map { u =>
                     @tweets.filter(t => t.userId == u.userId).map { tweet =>
                     <tr>
                         <td>@tweet.tweetId</td>

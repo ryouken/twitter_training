@@ -1,11 +1,11 @@
 @* このテンプレートの引数 *@
-@(tweets: Seq[models.Tables.TweetsRow], users: Seq[models.Tables.UsersRow])
+@(users: Seq[models.Tables.UsersRow])
 
 @* main.scala.htmlを呼び出す *@
-@main("ツイート一覧") {
+@main("ユーザ一覧") {
 
     <div>
-        <a href="@routes.TweetController.edit" class="btn btn-success" role="button">新規作成</a>
+        <a href="@routes.UserController.edit()" class="btn btn-success" role="button">新規作成</a>
     </div>
 
     <div class="col-xs-6">
@@ -14,24 +14,23 @@
                 <tr>
                     <th>ID</th>
                     <th>名前</th>
-                    <th>ツイート</th>
                     <th>&nbsp;</th>
                 </tr>
             </thead>
             <tbody>
                 @* ユーザの一覧をループで出力 *@
-                @tweets.map { tweet =>
-                    @users.filter(u => u.userId == tweet.userId).map { user =>
-                        <tr>
-                            <td>@tweet.tweetId</td>
-                            <td>@user.userName</td>
-                            <td>@tweet.tweetText</td>
-                            <td>@helper.form(routes.TweetController.remove(tweet.tweetId)) {
-                                <input type="submit" value="削除" class="btn btn-danger btn-xs"/>
-                            }
-                            </td>
-                        </tr>
-                    }
+                @users.map { user =>
+                    <tr>
+                        <td>@user.userId</td>
+                        <td><a href="@routes.UserController.edit(Some(user.userId))">@user.userName</a></td>
+                        <td>@helper.form(routes.FollowController.create(1, user.userId)) {
+                            <input type="submit" value="フォロー" class="btn btn-success"/>
+                        }
+                        <td>@helper.form(routes.UserController.remove(user.userId)){
+                            <input type="submit" value="削除" class="btn btn-danger btn-xs"/>
+                        }
+                        </td>
+                    </tr>
                 }
             </tbody>
         </table>

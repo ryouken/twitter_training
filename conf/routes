@@ -5,10 +5,8 @@ GET     /message                    controllers.AsyncController.message
 # Tweet
 GET     /tweet/list                 controllers.TweetController.list
 GET     /tweet/mylist               controllers.TweetController.mylist(id: Int)
-#GET     /tweet/edit                 controllers.TweetController.edit(id: Option[Int] ?= None)
-GET     /tweet/edit                 controllers.TweetController.edit
-POST    /tweet/create               controllers.TweetController.create
-#POST    /tweet/update               controllers.TweetController.update
+GET     /tweet/edit                 controllers.TweetController.edit(id: Int)
+POST    /tweet/create               controllers.TweetController.create(id: Int)
 POST    /tweet/remove/:id           controllers.TweetController.remove(id: Int)
 
 # User
@@ -22,7 +20,7 @@ GET     /user/authentication        controllers.UserController.authenticate
 
 # Follow
 GET     /follow/list                controllers.FollowController.list
-POST    /follow/create              controllers.FollowController.create
+POST    /follow/create              controllers.FollowController.create(follow_id: Int, followed_id: Int)
 #POST    /follow/remove/:id          controllers.FollowController.remove(id: Int)
 
 # JSON API

@@ -31,7 +31,13 @@ class FollowController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     }
   }
 
-  def create = TODO
+  def create(follow_id: Int, followed_id: Int) = Action.async { implicit rs =>
+    val relationship = RelationshipsRow(0, follow_id, followed_id)
+    db.run(Relationships += relationship).map { _ =>
+      // 一覧画面へリダイレクト
+      Redirect(routes.UserController.list)
+    }
+  }
 
   def remove = TODO
 

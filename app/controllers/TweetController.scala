@@ -44,10 +44,10 @@ class TweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     }
   }
 
-  def mylist(id: Int) = Action.async { implicit rs =>
+  def mylist(user_id: Int) = Action.async { implicit rs =>
     // IDの昇順にすべてのユーザ情報を取得
     db.run(Tweets.result).flatMap { tweets =>
-      db.run(Users.filter(t => t.userId === id.bind).result).map { users =>
+      db.run(Users.filter(t => t.userId === user_id.bind).result).map { users =>
       // 一覧画面を表示
       Ok(views.html.tweet.mylist(tweets, users))
       }
@@ -58,18 +58,19 @@ class TweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     * 編集画面表示
     */
 
-  def edit = Action.async { implicit rs =>
+  def edit(user_id: Int) = Action.async { implicit rs =>
     val form = Future { tweetForm }
-
-    form.map { form =>
-        Ok(views.html.tweet.edit(form))
+    form.flatMap { form =>
+      db.run(Users.filter(t => t.userId === user_id.bind).result).map { user =>
+        Ok(views.html.tweet.edit(form, user))
+      }
     }
   }
 
   /**
     * 登録実行
     */
-  def create = Action.async { implicit rs =>
+  def create(user_id: Int) = Action.async { implicit rs =>
   val timestamp = new Timestamp(System.currentTimeMillis())
     // リクエストの内容をバインド
     tweetForm.bindFromRequest.fold(
@@ -83,7 +84,7 @@ class TweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
       // OKの場合
       form  => {
         // ツイートを登録
-        val tweet = TweetsRow(0, 1, form.text, timestamp)
+        val tweet = TweetsRow(0, user_id, form.text, timestamp)
         db.run(Tweets += tweet).map { _ =>
           // 一覧画面へリダイレクト
           Redirect(routes.TweetController.list)
