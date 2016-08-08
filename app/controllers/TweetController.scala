@@ -32,62 +32,68 @@ class TweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
   import TweetController._
 
   /**
-    * 一覧表示
+    * タイムライン表示
     */
-  def list = Action.async { implicit rs =>
-    // IDの昇順にすべてのユーザ情報を取得
-    db.run(Tweets.result).flatMap { tweets =>
-      db.run(Users.result).map { users =>
-      // 一覧画面を表示
-      Ok(views.html.tweet.list(tweets, users))
+  def timeline = Action.async { implicit rs =>
+    val sessionUserId = rs.session.get("user_id").get.toInt
+    val query = for {
+      r <- Relations if r.followUserId === sessionUserId
+      u <- Users if u.userId === r.followedUserId
+      t <- Tweets if t.userId === r.followedUserId
+    } yield (u.userName, t.tweetText, t.timestamp)
+    val run: Future[Seq[(String, String, Timestamp)]] = db.run(query.result)
+    run.map { seq =>
+      val map: Seq[(String, Timestamp)] = seq.map { s =>
+        "user_name" -> s._1
+        "tweet_text" -> s._2
+        "timestamp" -> s._3
       }
+      Ok(views.html.tweet.timeline(map))
     }
   }
 
-  def mylist(user_id: Int) = Action.async { implicit rs =>
-    // IDの昇順にすべてのユーザ情報を取得
-    db.run(Tweets.result).flatMap { tweets =>
-      db.run(Users.filter(t => t.userId === user_id.bind).result).map { users =>
-      // 一覧画面を表示
-      Ok(views.html.tweet.mylist(tweets, users))
-      }
+  /**
+    * 自ツイート表示
+    */
+  def mylist = Action.async { implicit rs =>
+    val sessionUserId = rs.session.get("user_id").get.toInt
+    db.run(Tweets.filter(t => t.userId === sessionUserId).result).flatMap { tweets =>
+        Future { Ok(views.html.tweet.mylist(tweets)) }
     }
   }
 
   /**
     * 編集画面表示
     */
-
-  def edit(user_id: Int) = Action.async { implicit rs =>
+  def edit = Action.async { implicit rs =>
     val form = Future { tweetForm }
     form.flatMap { form =>
-      db.run(Users.filter(t => t.userId === user_id.bind).result).map { user =>
-        Ok(views.html.tweet.edit(form, user))
-      }
+        Future {Ok(views.html.tweet.edit(form))}
     }
   }
 
   /**
     * 登録実行
     */
-  def create(user_id: Int) = Action.async { implicit rs =>
-  val timestamp = new Timestamp(System.currentTimeMillis())
+  def create = Action.async { implicit rs =>
+    val sessionUserId = rs.session.get("user_id").get.toInt
+    val timestamp = new Timestamp(System.currentTimeMillis())
     // リクエストの内容をバインド
     tweetForm.bindFromRequest.fold(
       // エラーの場合
       error => {
         db.run(Tweets.result).map { users =>
           Logger.debug("create_error", error = new Throwable)
-          Redirect(routes.TweetController.list)
+          Redirect(routes.TweetController.mylist)
         }
       },
       // OKの場合
       form  => {
         // ツイートを登録
-        val tweet = TweetsRow(0, user_id, form.text, timestamp)
+        val tweet = TweetsRow(0, sessionUserId, form.text, timestamp)
         db.run(Tweets += tweet).map { _ =>
           // 一覧画面へリダイレクト
-          Redirect(routes.TweetController.list)
+          Redirect(routes.TweetController.mylist)
         }
       }
     )
@@ -97,10 +103,9 @@ class TweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     * 削除実行
     */
   def remove(id: Int) = Action.async { implicit rs =>
-    // ユーザを削除
     db.run(Tweets.filter(t => t.tweetId === id.bind).delete).map { _ =>
-      // 一覧画面へリダイレクト
-      Redirect(routes.TweetController.list)
+      // タイムラインへリダイレクト
+      Redirect(routes.TweetController.timeline)
     }
   }
 

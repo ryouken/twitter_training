@@ -5,7 +5,10 @@
 @main("ユーザ一覧") {
 
     <div>
-        <a href="@routes.UserController.edit()" class="btn btn-success" role="button">新規作成</a>
+        <a href="@routes.UserController.register" class="btn btn-success" role="button">新規作成</a>
+    </div>
+    <div>
+        <a href="@routes.UserController.logout" class="btn btn-success" role="button">ログアウト</a>
     </div>
 
     <div class="col-xs-6">
@@ -22,10 +25,13 @@
                 @users.map { user =>
                     <tr>
                         <td>@user.userId</td>
-                        <td><a href="@routes.UserController.edit(Some(user.userId))">@user.userName</a></td>
+                        <td><a href="@routes.UserController.edit">@user.userName</a></td>
+                        <td>@helper.form(routes.FollowController.create(user.userId)) {
+                            <input type="submit" value="フォロー" class="btn btn-success"/>
+                            }
                         <td>@helper.form(routes.UserController.remove(user.userId)){
                             <input type="submit" value="削除" class="btn btn-danger btn-xs"/>
-                        }
+                            }
                         </td>
                     </tr>
                 }

@@ -14,40 +14,40 @@ trait Tables {
   import slick.jdbc.{GetResult => GR}
 
   /** DDL for all tables. Call .create to execute. */
-  lazy val schema: profile.SchemaDescription = Relationships.schema ++ Tweets.schema ++ Users.schema
+  lazy val schema: profile.SchemaDescription = Relations.schema ++ Tweets.schema ++ Users.schema
   @deprecated("Use .schema instead of .ddl", "3.0")
   def ddl = schema
 
-  /** Entity class storing rows of table Relationships
-   *  @param relationId Database column relation_id SqlType(INT), PrimaryKey
+  /** Entity class storing rows of table Relations
+   *  @param relationId Database column relation_id SqlType(INT), AutoInc, PrimaryKey
    *  @param followUserId Database column follow_user_id SqlType(INT)
    *  @param followedUserId Database column followed_user_id SqlType(INT) */
-  case class RelationshipsRow(relationId: Int, followUserId: Int, followedUserId: Int)
-  /** GetResult implicit for fetching RelationshipsRow objects using plain SQL queries */
-  implicit def GetResultRelationshipsRow(implicit e0: GR[Int]): GR[RelationshipsRow] = GR{
+  case class RelationsRow(relationId: Int, followUserId: Int, followedUserId: Int)
+  /** GetResult implicit for fetching RelationsRow objects using plain SQL queries */
+  implicit def GetResultRelationsRow(implicit e0: GR[Int]): GR[RelationsRow] = GR{
     prs => import prs._
-    RelationshipsRow.tupled((<<[Int], <<[Int], <<[Int]))
+    RelationsRow.tupled((<<[Int], <<[Int], <<[Int]))
   }
-  /** Table description of table relationships. Objects of this class serve as prototypes for rows in queries. */
-  class Relationships(_tableTag: Tag) extends Table[RelationshipsRow](_tableTag, "relationships") {
-    def * = (relationId, followUserId, followedUserId) <> (RelationshipsRow.tupled, RelationshipsRow.unapply)
+  /** Table description of table relations. Objects of this class serve as prototypes for rows in queries. */
+  class Relations(_tableTag: Tag) extends Table[RelationsRow](_tableTag, "relations") {
+    def * = (relationId, followUserId, followedUserId) <> (RelationsRow.tupled, RelationsRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(relationId), Rep.Some(followUserId), Rep.Some(followedUserId)).shaped.<>({r=>import r._; _1.map(_=> RelationshipsRow.tupled((_1.get, _2.get, _3.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(relationId), Rep.Some(followUserId), Rep.Some(followedUserId)).shaped.<>({r=>import r._; _1.map(_=> RelationsRow.tupled((_1.get, _2.get, _3.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
-    /** Database column relation_id SqlType(INT), PrimaryKey */
-    val relationId: Rep[Int] = column[Int]("relation_id", O.PrimaryKey)
+    /** Database column relation_id SqlType(INT), AutoInc, PrimaryKey */
+    val relationId: Rep[Int] = column[Int]("relation_id", O.AutoInc, O.PrimaryKey)
     /** Database column follow_user_id SqlType(INT) */
     val followUserId: Rep[Int] = column[Int]("follow_user_id")
     /** Database column followed_user_id SqlType(INT) */
     val followedUserId: Rep[Int] = column[Int]("followed_user_id")
 
-    /** Foreign key referencing Users (database name relationships_ibfk_1) */
-    lazy val usersFk1 = foreignKey("relationships_ibfk_1", followUserId, Users)(r => r.userId, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
-    /** Foreign key referencing Users (database name relationships_ibfk_2) */
-    lazy val usersFk2 = foreignKey("relationships_ibfk_2", followedUserId, Users)(r => r.userId, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    /** Foreign key referencing Users (database name relations_ibfk_1) */
+    lazy val usersFk1 = foreignKey("relations_ibfk_1", followUserId, Users)(r => r.userId, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    /** Foreign key referencing Users (database name relations_ibfk_2) */
+    lazy val usersFk2 = foreignKey("relations_ibfk_2", followedUserId, Users)(r => r.userId, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
   }
-  /** Collection-like TableQuery object for table Relationships */
-  lazy val Relationships = new TableQuery(tag => new Relationships(tag))
+  /** Collection-like TableQuery object for table Relations */
+  lazy val Relations = new TableQuery(tag => new Relations(tag))
 
   /** Entity class storing rows of table Tweets
    *  @param tweetId Database column tweet_id SqlType(INT), AutoInc, PrimaryKey

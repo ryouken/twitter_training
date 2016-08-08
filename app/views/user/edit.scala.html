@@ -4,16 +4,16 @@
 
 @main("ユーザ作成") {
 
-    @form(userForm("user_id").value.map(x => routes.UserController.update).getOrElse(routes.UserController.create), 'class -> "container", 'role -> "form") {
+    @form(action = routes.UserController.update, 'class -> "container", 'role -> "form") {
         <fieldset>
             <div class="form-group">
-            @inputText(userForm("user_id"), '_label -> "ID")
+                @inputText(userForm("user_name"), '_label -> "ユーザネーム")
             </div>
             <div class="form-group">
-            @inputText(userForm("user_name"), '_label -> "ユーザネーム")
+                @inputPassword(userForm("password"), '_label -> "パスワード")
             </div>
             <div class="form-group">
-            @inputText(userForm("password"), '_label -> "パスワード")
+                @inputText(userForm("profile_text"), '_label -> "プロフィール")
                 <input type="submit" value="保存" class="btn btn-success">
             </div>
         </fieldset>

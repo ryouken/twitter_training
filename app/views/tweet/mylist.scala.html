@@ -1,37 +1,30 @@
 @* このテンプレートの引数 *@
-@(tweets: Seq[models.Tables.TweetsRow], user: Seq[models.Tables.UsersRow])
+@(tweets: Seq[models.Tables.TweetsRow])
 
 @* main.scala.htmlを呼び出す *@
 @main("自分のツイート一覧") {
 
-    @user.map { u =>
     <div>
-        <a href="@routes.TweetController.edit(u.userId)" class="btn btn-success" role="button">新規作成</a>
+        <a href="@routes.TweetController.edit" class="btn btn-success" role="button">新規作成</a>
     </div>
 
     <div class="col-xs-6">
         <table class="table table-hover">
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>名前</th>
                     <th>ツイート</th>
                     <th>&nbsp;</th>
                 </tr>
             </thead>
             <tbody>
-                @* ユーザの一覧をループで出力 *@
-                    @tweets.filter(t => t.userId == u.userId).map { tweet =>
+                @tweets.map { tweet =>
                     <tr>
-                        <td>@tweet.tweetId</td>
-                        <td>@user.map(u => u.userName)</td>
                         <td>@tweet.tweetText</td>
                         <td>@helper.form(routes.TweetController.remove(tweet.tweetId)) {
                             <input type="submit" value="削除" class="btn btn-danger btn-xs"/>
                             }
                         </td>
                     </tr>
-                    }
                 }
             </tbody>
         </table>
