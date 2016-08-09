@@ -68,7 +68,7 @@ class TweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
   def edit = Action.async { implicit rs =>
     val form = Future { tweetForm }
     form.flatMap { form =>
-        Future {Ok(views.html.tweet.edit(form))}
+        Future { Ok(views.html.tweet.edit(form)) }
     }
   }
 

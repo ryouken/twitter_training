@@ -68,9 +68,7 @@ class UserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     * 新規会員登録画面表示
     */
   def register = Action.async { implicit rs =>
-    val form = Future {
-      userForm
-    }
+    val form = Future { userForm }
     form.map { form =>
       Ok(views.html.user.register(form))
     }
@@ -142,9 +140,7 @@ class UserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     * ログイン画面表示
     */
   def login = Action.async { implicit rs =>
-    val form = Future {
-      userForm
-    }
+    val form = Future { userForm }
     form.map { form =>
       Ok(views.html.user.login(form))
     }
@@ -155,9 +151,7 @@ class UserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     */
   def authenticate = Action.async { implicit request =>
     userForm.bindFromRequest.fold(
-      formWithErrors => Future {
-        BadRequest(views.html.user.login(formWithErrors))
-      },
+      formWithErrors => Future { BadRequest(views.html.user.login(formWithErrors)) },
       form => {
         db.run(Users.filter(t => t.userName === form.user_name && t.password === form.password).result.headOption).map {
           case Some(user) => Redirect(routes.UserController.list).withSession("user_id" -> user.userId.toString)
@@ -171,9 +165,7 @@ class UserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     * ログアウト実行
     */
   def logout = Action.async { implicit rs =>
-    Future {
-      Redirect(routes.UserController.list).withNewSession
-    }
+    Future { Redirect(routes.UserController.list).withNewSession }
   }
 
 }
