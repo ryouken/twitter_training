@@ -53,8 +53,8 @@ trait Tables {
    *  @param tweetId Database column tweet_id SqlType(INT), AutoInc, PrimaryKey
    *  @param userId Database column user_id SqlType(INT)
    *  @param tweetText Database column tweet_text SqlType(VARCHAR), Length(300,true)
-   *  @param timestamp Database column timestamp SqlType(DATETIME) */
-  case class TweetsRow(tweetId: Int, userId: Int, tweetText: String, timestamp: java.sql.Timestamp)
+   *  @param createdAt Database column created_at SqlType(DATETIME) */
+  case class TweetsRow(tweetId: Int, userId: Int, tweetText: String, createdAt: java.sql.Timestamp)
   /** GetResult implicit for fetching TweetsRow objects using plain SQL queries */
   implicit def GetResultTweetsRow(implicit e0: GR[Int], e1: GR[String], e2: GR[java.sql.Timestamp]): GR[TweetsRow] = GR{
     prs => import prs._
@@ -62,9 +62,9 @@ trait Tables {
   }
   /** Table description of table tweets. Objects of this class serve as prototypes for rows in queries. */
   class Tweets(_tableTag: Tag) extends Table[TweetsRow](_tableTag, "tweets") {
-    def * = (tweetId, userId, tweetText, timestamp) <> (TweetsRow.tupled, TweetsRow.unapply)
+    def * = (tweetId, userId, tweetText, createdAt) <> (TweetsRow.tupled, TweetsRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(tweetId), Rep.Some(userId), Rep.Some(tweetText), Rep.Some(timestamp)).shaped.<>({r=>import r._; _1.map(_=> TweetsRow.tupled((_1.get, _2.get, _3.get, _4.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(tweetId), Rep.Some(userId), Rep.Some(tweetText), Rep.Some(createdAt)).shaped.<>({r=>import r._; _1.map(_=> TweetsRow.tupled((_1.get, _2.get, _3.get, _4.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column tweet_id SqlType(INT), AutoInc, PrimaryKey */
     val tweetId: Rep[Int] = column[Int]("tweet_id", O.AutoInc, O.PrimaryKey)
@@ -72,8 +72,8 @@ trait Tables {
     val userId: Rep[Int] = column[Int]("user_id")
     /** Database column tweet_text SqlType(VARCHAR), Length(300,true) */
     val tweetText: Rep[String] = column[String]("tweet_text", O.Length(300,varying=true))
-    /** Database column timestamp SqlType(DATETIME) */
-    val timestamp: Rep[java.sql.Timestamp] = column[java.sql.Timestamp]("timestamp")
+    /** Database column created_at SqlType(DATETIME) */
+    val createdAt: Rep[java.sql.Timestamp] = column[java.sql.Timestamp]("created_at")
 
     /** Foreign key referencing Users (database name tweets_ibfk_1) */
     lazy val usersFk = foreignKey("tweets_ibfk_1", userId, Users)(r => r.userId, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
@@ -85,18 +85,19 @@ trait Tables {
    *  @param userId Database column user_id SqlType(INT), AutoInc, PrimaryKey
    *  @param userName Database column user_name SqlType(VARCHAR), Length(255,true)
    *  @param password Database column password SqlType(CHAR), Length(30,false)
-   *  @param profileText Database column profile_text SqlType(VARCHAR), Length(300,true), Default(None) */
-  case class UsersRow(userId: Int, userName: String, password: String, profileText: Option[String] = None)
+   *  @param profileText Database column profile_text SqlType(VARCHAR), Length(300,true), Default(None)
+   *  @param email Database column email SqlType(VARCHAR), Length(255,true) */
+  case class UsersRow(userId: Int, userName: String, password: String, profileText: Option[String] = None, email: String)
   /** GetResult implicit for fetching UsersRow objects using plain SQL queries */
   implicit def GetResultUsersRow(implicit e0: GR[Int], e1: GR[String], e2: GR[Option[String]]): GR[UsersRow] = GR{
     prs => import prs._
-    UsersRow.tupled((<<[Int], <<[String], <<[String], <<?[String]))
+    UsersRow.tupled((<<[Int], <<[String], <<[String], <<?[String], <<[String]))
   }
   /** Table description of table users. Objects of this class serve as prototypes for rows in queries. */
   class Users(_tableTag: Tag) extends Table[UsersRow](_tableTag, "users") {
-    def * = (userId, userName, password, profileText) <> (UsersRow.tupled, UsersRow.unapply)
+    def * = (userId, userName, password, profileText, email) <> (UsersRow.tupled, UsersRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(userId), Rep.Some(userName), Rep.Some(password), profileText).shaped.<>({r=>import r._; _1.map(_=> UsersRow.tupled((_1.get, _2.get, _3.get, _4)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(userId), Rep.Some(userName), Rep.Some(password), profileText, Rep.Some(email)).shaped.<>({r=>import r._; _1.map(_=> UsersRow.tupled((_1.get, _2.get, _3.get, _4, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column user_id SqlType(INT), AutoInc, PrimaryKey */
     val userId: Rep[Int] = column[Int]("user_id", O.AutoInc, O.PrimaryKey)
@@ -106,6 +107,8 @@ trait Tables {
     val password: Rep[String] = column[String]("password", O.Length(30,varying=false))
     /** Database column profile_text SqlType(VARCHAR), Length(300,true), Default(None) */
     val profileText: Rep[Option[String]] = column[Option[String]]("profile_text", O.Length(300,varying=true), O.Default(None))
+    /** Database column email SqlType(VARCHAR), Length(255,true) */
+    val email: Rep[String] = column[String]("email", O.Length(255,varying=true))
   }
   /** Collection-like TableQuery object for table Users */
   lazy val Users = new TableQuery(tag => new Users(tag))

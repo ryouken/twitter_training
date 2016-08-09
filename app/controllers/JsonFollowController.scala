@@ -15,7 +15,8 @@ import play.api.libs.json._
   */
 
 object JsonFollowController {
-  // TweetsRowをJSONに変換するためのWritesを定義
+  case class FollowList(userName: String, profileText: Option[String])
+
   implicit val relationsRowWritesFormat = new Writes[RelationsRow]{
     def writes(relation: RelationsRow): JsValue = {
       Json.obj(
@@ -30,6 +31,7 @@ object JsonFollowController {
 class JsonFollowController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
                                  val messagesApi: MessagesApi) extends Controller
   with HasDatabaseConfigProvider[JdbcProfile] with I18nSupport {
+  import JsonFollowController._
 
   def followlist = Action.async { implicit rs =>
     val sessionUserId = rs.session.get("user_id").get.toInt
@@ -40,7 +42,7 @@ class JsonFollowController @Inject()(val dbConfigProvider: DatabaseConfigProvide
     db.run(query.result).map { seq =>
       val json = Json.toJson(
         seq.map{ s =>
-          Map("user_name" -> s._1, "profile_text" -> s._2)
+          Map("user_name" -> s._1, "profile_text" -> s._2.getOrElse(""))
         }
       )
       Ok(json)
@@ -56,7 +58,7 @@ class JsonFollowController @Inject()(val dbConfigProvider: DatabaseConfigProvide
     db.run(query.result).map { seq =>
       val json = Json.toJson(
         seq.map{ s =>
-          Map("user_name" -> s._1, "profile_text" -> s._2)
+          Map("user_name" -> s._1, "profile_text" -> s._2.getOrElse(""))
         }
       )
       Ok(json)

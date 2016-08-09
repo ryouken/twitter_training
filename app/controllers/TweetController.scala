@@ -34,23 +34,24 @@ class TweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
   /**
     * タイムライン表示
     */
-  def timeline = Action.async { implicit rs =>
-    val sessionUserId = rs.session.get("user_id").get.toInt
-    val query = for {
-      r <- Relations if r.followUserId === sessionUserId
-      u <- Users if u.userId === r.followedUserId
-      t <- Tweets if t.userId === r.followedUserId
-    } yield (u.userName, t.tweetText, t.timestamp)
-    val run: Future[Seq[(String, String, Timestamp)]] = db.run(query.result)
-    run.map { seq =>
-      val map: Seq[(String, Timestamp)] = seq.map { s =>
-        "user_name" -> s._1
-        "tweet_text" -> s._2
-        "timestamp" -> s._3
-      }
-      Ok(views.html.tweet.timeline(map))
-    }
-  }
+  def timeline = TODO
+//  def timeline = Action.async { implicit rs =>
+//    val sessionUserId = rs.session.get("user_id").get.toInt
+//    val query = for {
+//      r <- Relations if r.followUserId === sessionUserId
+//      u <- Users if u.userId === r.followedUserId
+//      t <- Tweets if t.userId === r.followedUserId
+//    } yield (u.userName, t.tweetText, t.timestamp)
+//    val run: Future[Seq[(String, String, Timestamp)]] = db.run(query.result)
+//    run.map { seq =>
+//      val map: Seq[(String, Timestamp)] = seq.map { s =>
+//        "user_name" -> s._1
+//        "tweet_text" -> s._2
+//        "timestamp" -> s._3
+//      }
+//      Ok(views.html.tweet.timeline(map))
+//    }
+//  }
 
   /**
     * 自ツイート表示

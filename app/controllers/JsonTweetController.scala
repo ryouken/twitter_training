@@ -5,22 +5,27 @@ package controllers
   */
 
 import java.sql.Timestamp
+
 import play.api.mvc._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.db.slick._
 import slick.driver.JdbcProfile
 import models.Tables._
 import javax.inject.Inject
+
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.{I18nSupport, MessagesApi}
+
 import scala.concurrent.Future
 import slick.driver.MySQLDriver.api._
 import play.api.libs.json._
+import play.api.libs.json.Json
 
 object JsonTweetController {
   // フォームの値を格納するケースクラス
   case class TweetForm(text: String)
+//  case class Timeline(tweetId: Int, userName: String, tweetText: String)
 
   implicit val tweetFormFormat = Json.format[TweetForm]
 
@@ -31,22 +36,22 @@ object JsonTweetController {
         "tweet_id"    -> tweet.tweetId,
         "user_id"     -> tweet.userId,
         "tweet_text"  -> tweet.tweetText,
-        "timestamp"   -> tweet.timestamp
+        "created_at"  -> tweet.createdAt
       )
     }
   }
 
-  // UsersRowをJSONに変換するためのWritesを定義
-  implicit val usersRowWritesFormat = new Writes[UsersRow]{
-    def writes(user: UsersRow): JsValue = {
-      Json.obj(
-        "user_id"        -> user.userId,
-        "user_name"      -> user.userName,
-        "password"       -> user.password,
-        "profile_text"   -> user.profileText
-      )
-    }
-  }
+  // TimelineをJSONに変換するためのWritesを定義
+//  implicit val timelineWritesFormat = new Writes[Timeline]{
+//    def writes(timeline: Timeline): JsValue = {
+//      val timelineSeq = Seq(
+//        "tweet_id"    -> JsNumber(timeline.tweetId),
+//        "user_name"   -> JsString(timeline.userName),
+//        "tweet_text"  -> JsString(timeline.tweetText)
+//      )
+//      JsObject(timelineSeq)
+//    }
+//  }
 
   // formから送信されたデータ ⇔ ケースクラスの変換を行う
   val tweetForm = Form(
@@ -55,10 +60,6 @@ object JsonTweetController {
     )(TweetForm.apply)(TweetForm.unapply)
   )
 
-  case class Timeline(userName: String, tweetText: String, timestamp: Timestamp)
-  object Timeline {
-    implicit def jsonWrites = Json.writes[Timeline]
-  }
 
 }
 
@@ -70,17 +71,21 @@ class JsonTweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider
   /**
     * タイムライン表示
     */
-  def timeline = Action.async { implicit rs =>
+  def timeline = Action.async {
+    implicit rs =>
     val sessionUserId = rs.session.get("user_id").get.toInt
     val query = for {
       r <- Relations if r.followUserId === sessionUserId
       u <- Users if u.userId === r.followedUserId
       t <- Tweets if t.userId === r.followedUserId
-    } yield (u.userName, t.tweetText, t.timestamp)
+    } yield (t.tweetId, u.userName, t.tweetText)
     db.run(query.result).map { seq =>
       val json = Json.toJson(
         seq.map{ t =>
-          Map("memberId" -> t._1, "tweetBody" -> t._2, "followingMemberId" -> t._3)
+          Map(
+            "tweet_id" -> t._1.toString,
+            "user_name" -> t._2,
+            "tweet_text" -> t._3)
         }
       )
       Ok(json)
@@ -111,9 +116,7 @@ class JsonTweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider
       }
     }.recoverTotal { e =>
       // NGの場合はバリデーションエラーを返す
-      Future {
-        BadRequest(Json.obj("result" -> "failure", "error" -> JsError.toJson(e)))
-      }
+      Future { BadRequest(Json.obj("result" -> "failure", "error" -> JsError.toJson(e))) }
     }
   }
 

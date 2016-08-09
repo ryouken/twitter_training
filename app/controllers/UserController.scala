@@ -16,11 +16,12 @@ import slick.driver.MySQLDriver.api._
 object UserController {
 
   // フォームの値を格納するケースクラス
-  case class UserForm(user_name: String, password: String, profile_text: Option[String])
+  case class UserForm(email: String, user_name: String, password: String, profile_text: Option[String])
 
   // formから送信されたデータ ⇔ ケースクラスの変換を行う
   val userForm = Form(
     mapping(
+      "email"     -> email,
       "user_name" -> nonEmptyText(maxLength = 20),
       "password" -> nonEmptyText(maxLength = 20),
       "profile_text" -> optional(text(maxLength = 140))
@@ -54,7 +55,7 @@ class UserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
       // IDからユーザ情報を1件取得
       db.run(Users.filter(t => t.userId === sessionUserId).result.head).map { user =>
         // 値をフォームに詰める
-        userForm.fill(UserForm(user.userName, user.password, user.profileText))
+        userForm.fill(UserForm(user.email, user.userName, user.password, user.profileText))
       }
     }
     form.flatMap { form =>
@@ -90,7 +91,7 @@ class UserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
       // OKの場合
       form => {
         // ユーザを登録
-        val user = UsersRow(0, form.user_name, form.password, form.profile_text)
+        val user = UsersRow(0, form.user_name, form.password, form.profile_text, form.email)
         db.run(Users += user).map { _ =>
           // ログイン画面へリダイレクト
           Redirect(routes.UserController.login)
@@ -115,7 +116,7 @@ class UserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
       // OKの場合は登録を行い一覧画面にリダイレクトする
       form => {
         // ユーザ情報を更新
-        val user = UsersRow(sessionUserId, form.user_name, form.password, form.profile_text)
+        val user = UsersRow(sessionUserId, form.user_name, form.password, form.profile_text, form.email)
         db.run(Users.filter(t => t.userId === sessionUserId).update(user)).map { u =>
           // 一覧画面にリダイレクト
           Redirect(routes.TweetController.mylist)

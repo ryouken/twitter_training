@@ -11,10 +11,10 @@ POST    /tweet/create               controllers.TweetController.create
 POST    /tweet/remove/:id           controllers.TweetController.remove(id: Int)
 
 # JSON Tweet API
-GET     /json/tweet/timeline         controllers.JsonTweetController.timeline
-GET     /json/tweet/mylist           controllers.JsonTweetController.mylist
-POST    /json/tweet/create           controllers.JsonTweetController.create
-POST    /json/tweet/remove/:id       controllers.JsonTweetController.remove(id: Int)
+GET     /json/tweet/timeline        controllers.JsonTweetController.timeline
+GET     /json/tweet/mylist          controllers.JsonTweetController.mylist
+PUT     /json/tweet/create          controllers.JsonTweetController.create
+DELETE  /json/tweet/remove/:id      controllers.JsonTweetController.remove(id: Int)
 
 # User
 GET     /user/list                  controllers.UserController.list
@@ -25,16 +25,16 @@ POST    /user/remove/:id            controllers.UserController.remove(id: Int)
 GET     /user/register              controllers.UserController.register
 GET     /user/login                 controllers.UserController.login
 GET     /user/logout                controllers.UserController.logout
-GET     /user/authentication        controllers.UserController.authenticate
+GET     /user/authenticate          controllers.UserController.authenticate
 
 # JSON User API
 GET     /json/user/list             controllers.JsonUserController.list
 GET     /json/user/edit             controllers.JsonUserController.edit
-POST    /json/user/create           controllers.JsonUserController.create
+PUT     /json/user/create           controllers.JsonUserController.create
 POST    /json/user/update           controllers.JsonUserController.update
-POST    /json/user/remove/:id       controllers.JsonUserController.remove(id: Int)
+DELETE  /json/user/remove/:id       controllers.JsonUserController.remove(id: Int)
 GET     /json/user/logout           controllers.JsonUserController.logout
-GET     /json/user/authentication   controllers.JsonUserController.authenticate
+GET     /json/user/authenticate     controllers.JsonUserController.authenticate
 
 # Follow
 GET     /follow/list                controllers.FollowController.followlist
@@ -45,8 +45,8 @@ POST    /follow/remove/:id          controllers.FollowController.remove(id: Int)
 # JSON Follow API
 GET     /json/follow/list           controllers.JsonFollowController.followlist
 GET     /json/followed/list         controllers.JsonFollowController.followedlist
-POST    /json/follow/create         controllers.JsonFollowController.create(followed_id: Int)
-POST    /json/follow/remove/:id     controllers.JsonFollowController.remove(id: Int)
+PUT     /json/follow/create         controllers.JsonFollowController.create(followed_id: Int)
+DELETE  /json/follow/remove/:id     controllers.JsonFollowController.remove(id: Int)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
