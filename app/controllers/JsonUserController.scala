@@ -22,14 +22,15 @@ object JsonUserController {
 
   // フォームの値を格納するケースクラス
   case class UserForm(email: String, user_name: String, password: String, profile_text: Option[String])
+  case class LoginForm(email: String, password: String)
 
-  implicit val userFormFormat = Json.format[UserForm]
+  implicit val userFormFormat  = Json.format[UserForm]
+  implicit val loginFormFormat = Json.format[LoginForm]
 
   // UsersRowをJSONに変換するためのWritesを定義
   implicit val usersRowWritesFormat = new Writes[UsersRow]{
     def writes(user: UsersRow): JsValue = {
       Json.obj(
-        "user_id"        -> user.userId,
         "email"          -> user.email,
         "user_name"      -> user.userName,
         "password"       -> user.password,
@@ -43,9 +44,15 @@ object JsonUserController {
     mapping(
       "email"        -> email,
       "user_name"    -> nonEmptyText(maxLength = 20),
-      "password"     -> nonEmptyText(maxLength = 20),
+      "password"     -> nonEmptyText(minLength = 8, maxLength = 20),
       "profile_text" -> optional(text(maxLength = 140))
     )(UserForm.apply)(UserForm.unapply)
+  )
+  val loginForm = Form(
+    mapping(
+      "email"        -> email,
+      "password"     -> nonEmptyText(minLength = 8, maxLength = 20)
+    )(LoginForm.apply)(LoginForm.unapply)
   )
 }
 
@@ -111,19 +118,19 @@ class JsonUserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
   /**
     * 削除実行
     */
-  def remove(id: Int) = Action.async { implicit rs =>
+  def delete = Action.async { implicit rs =>
     val sessionUserId = rs.session.get("user_id").get.toInt
     db.run(Users.filter(t => t.userId === sessionUserId).delete).map { _ =>
       Ok(Json.obj("result" -> "success"))
     }
   }
 
-  /**
+    /**
     * ログイン認証実行
     */
   def authenticate = Action.async(parse.json) { implicit rs =>
-    rs.body.validate[UserForm].map { form => {
-        db.run(Users.filter(t => t.userName === form.user_name && t.password === form.password).result.headOption).map {
+    rs.body.validate[LoginForm].map { form => {
+        db.run(Users.filter(t => t.email === form.email && t.password === form.password).result.headOption).map {
           case Some(user) => Ok(Json.obj("result" -> "success")).withSession("user_id" -> user.userId.toString)
           case _ => BadRequest(Json.obj("result" -> "login_failure"))
         }

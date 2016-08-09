@@ -17,15 +17,22 @@ object UserController {
 
   // フォームの値を格納するケースクラス
   case class UserForm(email: String, user_name: String, password: String, profile_text: Option[String])
+  case class LoginForm(email: String, password: String)
 
   // formから送信されたデータ ⇔ ケースクラスの変換を行う
   val userForm = Form(
     mapping(
-      "email"     -> email,
-      "user_name" -> nonEmptyText(maxLength = 20),
-      "password" -> nonEmptyText(maxLength = 20),
+      "email"        -> email,
+      "user_name"    -> nonEmptyText(maxLength = 20),
+      "password"     -> nonEmptyText(maxLength = 20),
       "profile_text" -> optional(text(maxLength = 140))
     )(UserForm.apply)(UserForm.unapply)
+  )
+  val loginForm = Form(
+    mapping(
+      "email"        -> email,
+      "password"     -> nonEmptyText(minLength = 8, maxLength = 20)
+    )(LoginForm.apply)(LoginForm.unapply)
   )
 }
 
@@ -128,7 +135,7 @@ class UserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
   /**
     * 削除実行
     */
-  def remove(id: Int) = Action.async { implicit rs =>
+  def delete(id: Int) = Action.async { implicit rs =>
     val sessionUserId = rs.session.get("user_id").get.toInt
     // ユーザを削除
     db.run(Users.filter(t => t.userId === sessionUserId).delete).map { _ =>
@@ -141,8 +148,9 @@ class UserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     * ログイン画面表示
     */
   def login = Action.async { implicit rs =>
-    val form = Future { userForm }
+    val form = Future { loginForm }
     form.map { form =>
+      Logger.debug("reach login")
       Ok(views.html.user.login(form))
     }
   }
@@ -151,12 +159,13 @@ class UserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     * ログイン認証実行
     */
   def authenticate = Action.async { implicit request =>
-    userForm.bindFromRequest.fold(
-      formWithErrors => Future { BadRequest(views.html.user.login(formWithErrors)) },
+    loginForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future { BadRequest(views.html.user.login(formWithErrors)) } },
       form => {
-        db.run(Users.filter(t => t.userName === form.user_name && t.password === form.password).result.headOption).map {
+        db.run(Users.filter(t => t.email === form.email && t.password === form.password).result.headOption).map {
           case Some(user) => Redirect(routes.UserController.list).withSession("user_id" -> user.userId.toString)
-          case _ => BadRequest(views.html.user.login(userForm))
+          case _          => BadRequest(views.html.user.login(loginForm))
         }
       }
     )
@@ -168,5 +177,7 @@ class UserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
   def logout = Action.async { implicit rs =>
     Future { Redirect(routes.UserController.list).withNewSession }
   }
+
+  def remove = TODO
 
 }

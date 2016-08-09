@@ -20,7 +20,7 @@
                 @tweets.map { tweet =>
                     <tr>
                         <td>@tweet.tweetText</td>
-                        <td>@helper.form(routes.TweetController.remove(tweet.tweetId)) {
+                        <td>@helper.form(routes.TweetController.delete(tweet.tweetId)) {
                             <input type="submit" value="削除" class="btn btn-danger btn-xs"/>
                             }
                         </td>

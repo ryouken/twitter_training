@@ -29,7 +29,7 @@
                         <td>@helper.form(routes.FollowController.create(user.userId)) {
                             <input type="submit" value="フォロー" class="btn btn-success"/>
                             }
-                        <td>@helper.form(routes.UserController.remove(user.userId)){
+                        <td>@helper.form(routes.UserController.delete(user.userId)){
                             <input type="submit" value="削除" class="btn btn-danger btn-xs"/>
                             }
                         </td>

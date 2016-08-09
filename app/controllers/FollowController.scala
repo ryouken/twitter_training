@@ -48,7 +48,7 @@ class FollowController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     }
   }
 
-  def remove(id: Int) = Action.async { implicit rs =>
+  def delete(id: Int) = Action.async { implicit rs =>
     db.run(Relations.filter(t => t.relationId === id.bind).delete).map { _ =>
       // 一覧画面へリダイレクト
       Redirect(routes.FollowController.followlist)

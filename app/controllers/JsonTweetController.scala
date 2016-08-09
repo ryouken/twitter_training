@@ -24,8 +24,7 @@ import play.api.libs.json.Json
 
 object JsonTweetController {
   // フォームの値を格納するケースクラス
-  case class TweetForm(text: String)
-//  case class Timeline(tweetId: Int, userName: String, tweetText: String)
+  case class TweetForm(tweet_id: Int, tweet_text: String)
 
   implicit val tweetFormFormat = Json.format[TweetForm]
 
@@ -41,25 +40,13 @@ object JsonTweetController {
     }
   }
 
-  // TimelineをJSONに変換するためのWritesを定義
-//  implicit val timelineWritesFormat = new Writes[Timeline]{
-//    def writes(timeline: Timeline): JsValue = {
-//      val timelineSeq = Seq(
-//        "tweet_id"    -> JsNumber(timeline.tweetId),
-//        "user_name"   -> JsString(timeline.userName),
-//        "tweet_text"  -> JsString(timeline.tweetText)
-//      )
-//      JsObject(timelineSeq)
-//    }
-//  }
-
   // formから送信されたデータ ⇔ ケースクラスの変換を行う
   val tweetForm = Form(
     mapping(
-      "text" -> nonEmptyText(maxLength = 140)
+      "tweet_id"   -> number,
+      "tweet_text" -> nonEmptyText(maxLength = 140)
     )(TweetForm.apply)(TweetForm.unapply)
   )
-
 
 }
 
@@ -110,7 +97,7 @@ class JsonTweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider
     val timestamp = new Timestamp(System.currentTimeMillis())
     rs.body.validate[TweetForm].map { form =>
       // OKの場合はユーザを登録
-      val tweet = TweetsRow(0, sessionUserId, form.text, timestamp)
+      val tweet = TweetsRow(0, sessionUserId, form.tweet_text, timestamp)
       db.run(Tweets += tweet).map { _ =>
         Ok(Json.obj("result" -> "success"))
       }
@@ -123,10 +110,14 @@ class JsonTweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider
   /**
     * 削除実行
     */
-  def remove(id: Int) = Action.async { implicit rs =>
+  def delete = Action.async(parse.json) { implicit rs =>
     // ユーザを削除
-    db.run(Tweets.filter(t => t.tweetId === id.bind).delete).map { _ =>
-      Ok(Json.obj("result" -> "success"))
+    rs.body.validate[TweetForm].map { form =>
+      db.run(Tweets.filter(t => t.tweetId === form.tweet_id.bind).delete).map { _ =>
+        Ok(Json.obj("result" -> "success"))
+      }
+    }.recoverTotal { e =>
+      Future { BadRequest(Json.obj("result" -> "failure", "error" -> JsError.toJson(e))) }
     }
   }
 

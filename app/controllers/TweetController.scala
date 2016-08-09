@@ -103,7 +103,7 @@ class TweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
   /**
     * 削除実行
     */
-  def remove(id: Int) = Action.async { implicit rs =>
+  def delete(id: Int) = Action.async { implicit rs =>
     db.run(Tweets.filter(t => t.tweetId === id.bind).delete).map { _ =>
       // タイムラインへリダイレクト
       Redirect(routes.TweetController.timeline)

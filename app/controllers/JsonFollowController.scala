@@ -8,7 +8,12 @@ import slick.driver.JdbcProfile
 import slick.driver.MySQLDriver.api._
 import models.Tables._
 import javax.inject.Inject
+
+import play.api.data.Form
+import play.api.data.Forms._
 import play.api.libs.json._
+
+import scala.concurrent.Future
 
 /**
   * Created by ryoken.kojima on 2016/08/04.
@@ -16,6 +21,9 @@ import play.api.libs.json._
 
 object JsonFollowController {
   case class FollowList(userName: String, profileText: Option[String])
+  case class FollowForm(relation_id: Int, followed_id: Int)
+
+  implicit val FollowFormFormat  = Json.format[FollowForm]
 
   implicit val relationsRowWritesFormat = new Writes[RelationsRow]{
     def writes(relation: RelationsRow): JsValue = {
@@ -26,6 +34,13 @@ object JsonFollowController {
       )
     }
   }
+
+  val followForm = Form(
+    mapping(
+      "relation_id"   -> number,
+      "followed_id"   -> number
+    )(FollowForm.apply)(FollowForm.unapply)
+  )
 }
 
 class JsonFollowController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
@@ -65,17 +80,27 @@ class JsonFollowController @Inject()(val dbConfigProvider: DatabaseConfigProvide
     }
   }
 
-  def create(followed_id: Int) = Action.async { implicit rs =>
-    val sessionUserId = rs.session.get("user_id").get.toInt
-    val relation = RelationsRow(0, sessionUserId, followed_id)
-    db.run(Relations += relation).map { _ =>
-      Ok(Json.obj("result" -> "success"))
+  def create = Action.async(parse.json) { implicit rs =>
+    rs.body.validate[FollowForm].map { form =>
+      val sessionUserId = rs.session.get("user_id").get.toInt
+      val relation = RelationsRow(0, sessionUserId, form.followed_id)
+      db.run(Relations += relation).map { _ =>
+        Ok(Json.obj("result" -> "success"))
+      }
+    }.recoverTotal { e =>
+      // NGの場合はバリデーションエラーを返す
+      Future { BadRequest(Json.obj("result" -> "failure", "error" -> JsError.toJson(e))) }
     }
   }
 
-  def remove(id: Int) = Action.async { implicit rs =>
-    db.run(Relations.filter(t => t.relationId === id.bind).delete).map { _ =>
-      Ok(Json.obj("result" -> "success"))
+  def delete = Action.async(parse.json) { implicit rs =>
+    // ユーザを削除
+    rs.body.validate[FollowForm].map { form =>
+      db.run(Tweets.filter(t => t.tweetId === form.relation_id.bind).delete).map { _ =>
+        Ok(Json.obj("result" -> "success"))
+      }
+    }.recoverTotal { e =>
+      Future { BadRequest(Json.obj("result" -> "failure", "error" -> JsError.toJson(e))) }
     }
   }
 

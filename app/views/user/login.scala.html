@@ -1,4 +1,4 @@
-@(userForm: Form[controllers.UserController.UserForm])(implicit messages: Messages)
+@(loginForm: Form[controllers.UserController.LoginForm])(implicit messages: Messages)
 
 @import helper._
 
@@ -7,10 +7,10 @@
     @helper.form(action = routes.UserController.authenticate, 'class -> "container", 'role -> "form") {
         <fieldset>
             <div class="form-group">
-            @inputText(userForm("user_name"), '_label -> "ユーザネーム")
+            @inputText(loginForm("email"), '_label -> "email")
             </div>
             <div class="form-group">
-            @inputText(userForm("password"), '_label -> "パスワード")
+            @inputText(loginForm("password"), '_label -> "パスワード")
                 <input type="submit" value="ログイン" class="btn btn-success">
             </div>
         </fieldset>
