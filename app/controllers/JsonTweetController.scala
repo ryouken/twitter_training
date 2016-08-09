@@ -36,12 +36,30 @@ object JsonTweetController {
     }
   }
 
+  // UsersRowをJSONに変換するためのWritesを定義
+  implicit val usersRowWritesFormat = new Writes[UsersRow]{
+    def writes(user: UsersRow): JsValue = {
+      Json.obj(
+        "user_id"        -> user.userId,
+        "user_name"      -> user.userName,
+        "password"       -> user.password,
+        "profile_text"   -> user.profileText
+      )
+    }
+  }
+
   // formから送信されたデータ ⇔ ケースクラスの変換を行う
   val tweetForm = Form(
     mapping(
       "text" -> nonEmptyText(maxLength = 140)
     )(TweetForm.apply)(TweetForm.unapply)
   )
+
+  case class Timeline(userName: String, tweetText: String, timestamp: Timestamp)
+  object Timeline {
+    implicit def jsonWrites = Json.writes[Timeline]
+  }
+
 }
 
 class JsonTweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
@@ -56,13 +74,13 @@ class JsonTweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider
     val sessionUserId = rs.session.get("user_id").get.toInt
     val query = for {
       r <- Relations if r.followUserId === sessionUserId
-      u <- Users     if u.userId       === r.followedUserId
-      t <- Tweets    if t.userId       === r.followedUserId
+      u <- Users if u.userId === r.followedUserId
+      t <- Tweets if t.userId === r.followedUserId
     } yield (u.userName, t.tweetText, t.timestamp)
     db.run(query.result).map { seq =>
       val json = Json.toJson(
-        seq.map{ s =>
-          Map("user_name" -> s._1, "tweet_text" -> s._2, "timestamp" -> s._3)
+        seq.map{ t =>
+          Map("memberId" -> t._1, "tweetBody" -> t._2, "followingMemberId" -> t._3)
         }
       )
       Ok(json)
