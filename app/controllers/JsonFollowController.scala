@@ -94,9 +94,8 @@ class JsonFollowController @Inject()(val dbConfigProvider: DatabaseConfigProvide
   }
 
   def delete = Action.async(parse.json) { implicit rs =>
-    // ユーザを削除
     rs.body.validate[FollowForm].map { form =>
-      db.run(Tweets.filter(t => t.tweetId === form.relation_id.bind).delete).map { _ =>
+      db.run(Relations.filter(t => t.relationId === form.relation_id.bind).delete).map { _ =>
         Ok(Json.obj("result" -> "success"))
       }
     }.recoverTotal { e =>

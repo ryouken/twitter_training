@@ -65,7 +65,6 @@ class JsonUserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     * 一覧表示
     */
   def list = Action.async { implicit rs =>
-    // IDの昇順にすべてのユーザ情報を取得
     db.run(Users.result).map { users =>
       Ok(Json.obj("users" -> users))
     }

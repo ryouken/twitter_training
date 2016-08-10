@@ -96,7 +96,7 @@ class JsonTweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider
     val sessionUserId = rs.session.get("user_id").get.toInt
     val timestamp = new Timestamp(System.currentTimeMillis())
     rs.body.validate[TweetForm].map { form =>
-      // OKの場合はユーザを登録
+      // OKの場合はツイートを登録
       val tweet = TweetsRow(0, sessionUserId, form.tweet_text, timestamp)
       db.run(Tweets += tweet).map { _ =>
         Ok(Json.obj("result" -> "success"))
@@ -111,7 +111,6 @@ class JsonTweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider
     * 削除実行
     */
   def delete = Action.async(parse.json) { implicit rs =>
-    // ユーザを削除
     rs.body.validate[TweetForm].map { form =>
       db.run(Tweets.filter(t => t.tweetId === form.tweet_id.bind).delete).map { _ =>
         Ok(Json.obj("result" -> "success"))
