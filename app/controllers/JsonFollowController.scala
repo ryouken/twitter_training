@@ -69,7 +69,7 @@ class JsonFollowController @Inject()(val dbConfigProvider: DatabaseConfigProvide
     val query = for {
       r <- Relations if r.followedUserId === sessionUserId
       u <- Users     if u.userId         === r.followUserId
-    } yield (u.userName, u.profileText, r.followUserId)
+    } yield (u.userName, u.profileText)
     db.run(query.result).map { seq =>
       val json = Json.toJson(
         seq.map{ s =>
@@ -85,11 +85,11 @@ class JsonFollowController @Inject()(val dbConfigProvider: DatabaseConfigProvide
       val sessionUserId = rs.session.get("user_id").get.toInt
       val relation = RelationsRow(0, sessionUserId, form.followed_id)
       db.run(Relations += relation).map { _ =>
-        Ok(Json.obj("result" -> "success"))
+        Ok(Json.obj("result" -> "create_success"))
       }
     }.recoverTotal { e =>
       // NGの場合はバリデーションエラーを返す
-      Future { BadRequest(Json.obj("result" -> "failure", "error" -> JsError.toJson(e))) }
+      Future { BadRequest(Json.obj("result" -> "create_failure", "error" -> JsError.toJson(e))) }
     }
   }
 
@@ -99,7 +99,7 @@ class JsonFollowController @Inject()(val dbConfigProvider: DatabaseConfigProvide
         Ok(Json.obj("result" -> "success"))
       }
     }.recoverTotal { e =>
-      Future { BadRequest(Json.obj("result" -> "failure", "error" -> JsError.toJson(e))) }
+      Future { BadRequest(Json.obj("result" -> "delete_failure", "error" -> JsError.toJson(e))) }
     }
   }
 

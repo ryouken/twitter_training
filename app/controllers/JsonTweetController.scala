@@ -63,8 +63,8 @@ class JsonTweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider
     val sessionUserId = rs.session.get("user_id").get.toInt
     val query = for {
       r <- Relations if r.followUserId === sessionUserId
-      u <- Users if u.userId === r.followedUserId
-      t <- Tweets if t.userId === r.followedUserId
+      u <- Users     if u.userId       === r.followedUserId
+      t <- Tweets    if t.userId       === r.followedUserId
     } yield (t.tweetId, u.userName, t.tweetText)
     db.run(query.result).map { seq =>
       val json = Json.toJson(
@@ -99,11 +99,11 @@ class JsonTweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider
       // OKの場合はツイートを登録
       val tweet = TweetsRow(0, sessionUserId, form.tweet_text, timestamp)
       db.run(Tweets += tweet).map { _ =>
-        Ok(Json.obj("result" -> "success"))
+        Ok(Json.obj("result" -> "create_success"))
       }
     }.recoverTotal { e =>
       // NGの場合はバリデーションエラーを返す
-      Future { BadRequest(Json.obj("result" -> "failure", "error" -> JsError.toJson(e))) }
+      Future { BadRequest(Json.obj("result" -> "create_failure", "error" -> JsError.toJson(e))) }
     }
   }
 
@@ -113,10 +113,10 @@ class JsonTweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider
   def delete = Action.async(parse.json) { implicit rs =>
     rs.body.validate[TweetForm].map { form =>
       db.run(Tweets.filter(t => t.tweetId === form.tweet_id.bind).delete).map { _ =>
-        Ok(Json.obj("result" -> "success"))
+        Ok(Json.obj("result" -> "delete_success"))
       }
     }.recoverTotal { e =>
-      Future { BadRequest(Json.obj("result" -> "failure", "error" -> JsError.toJson(e))) }
+      Future { BadRequest(Json.obj("result" -> "delete_failure", "error" -> JsError.toJson(e))) }
     }
   }
 

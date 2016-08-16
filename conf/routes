@@ -6,22 +6,22 @@ GET     /message                    controllers.AsyncController.message
 # JSON Tweet API
 GET     /json/tweet/timeline        controllers.JsonTweetController.timeline
 GET     /json/tweet/mylist          controllers.JsonTweetController.mylist
-PUT     /json/tweet/create          controllers.JsonTweetController.create
+POST    /json/tweet/create          controllers.JsonTweetController.create
 DELETE  /json/tweet/delete          controllers.JsonTweetController.delete
 
 # JSON User API
 GET     /json/user/list             controllers.JsonUserController.list
 GET     /json/user/edit             controllers.JsonUserController.edit
-PUT     /json/user/create           controllers.JsonUserController.create
-POST    /json/user/update           controllers.JsonUserController.update
+POST    /json/user/create           controllers.JsonUserController.create
+PUT     /json/user/update           controllers.JsonUserController.update
 DELETE  /json/user/delete           controllers.JsonUserController.delete
 GET     /json/user/logout           controllers.JsonUserController.logout
-GET     /json/user/authenticate     controllers.JsonUserController.authenticate
+POST    /json/user/authenticate     controllers.JsonUserController.authenticate
 
 # JSON Follow API
 GET     /json/follow/list           controllers.JsonFollowController.followlist
 GET     /json/followed/list         controllers.JsonFollowController.followedlist
-PUT     /json/follow/create         controllers.JsonFollowController.create
+POST    /json/follow/create         controllers.JsonFollowController.create
 DELETE  /json/follow/delete         controllers.JsonFollowController.delete
 
 # Tweet

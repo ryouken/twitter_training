@@ -1,5 +1,6 @@
 create table users(
 user_id int NOT NULL PRIMARY KEY AUTO_INCREMENT,
+email varchar(255) NOT NULL,
 user_name varchar(255) NOT NULL,
 password char(30) NOT NULL,
 profile_text varchar(300)
@@ -9,7 +10,7 @@ create table tweets(
 tweet_id int NOT NULL PRIMARY KEY AUTO_INCREMENT,
 user_id int NOT NULL,
 tweet_text varchar(300) NOT NULL,
-timestamp datetime NOT NULL,
+created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 FOREIGN KEY(user_id) REFERENCES users(user_id)
 );
 
@@ -32,7 +33,6 @@ insert into tweets(tweet_id, user_id, tweet_text, timestamp) values(1, 1, "つ�
 insert into tweets(tweet_id, user_id, tweet_text, timestamp) values(2, 1, "お腹減ったな", '2016-08-01');
 insert into tweets(tweet_id, user_id, tweet_text, timestamp) values(3, 2, "I AM a Girl", '2016-04-02');
 insert into tweets(tweet_id, user_id, tweet_text, timestamp) values(4, 3, "うぇいうぇい", '2016-08-02');
-
 insert into tweets(tweet_id, user_id, tweet_text, timestamp) values(0, 2, "I AM a Stupid", '2016-04-02');
 insert into tweets(tweet_id, user_id, tweet_text, timestamp) values(0, 3, "I AM a Boy", '2016-04-02');
 insert into tweets(tweet_id, user_id, tweet_text, timestamp) values(0, 6, "I AM a Champion", '2016-04-02');
@@ -41,11 +41,48 @@ insert into tweets(tweet_id, user_id, tweet_text, timestamp) values(0, 3, "つ�
 insert into tweets(tweet_id, user_id, tweet_text, timestamp) values(0, 6, "ずいずい", '2016-08-02');
 
 RELATIONSHIPS
-insert into relationships(relation_id, follow_user_id, followed_user_id) values(1, 1, 2);
-insert into relationships(relation_id, follow_user_id, followed_user_id) values(2, 1, 3);
-insert into relationships(relation_id, follow_user_id, followed_user_id) values(3, 2, 3);
-insert into relationships(relation_id, follow_user_id, followed_user_id) values(4, 3, 1);
+insert into relations(relation_id, follow_user_id, followed_user_id) values(1, 1, 2);
+insert into relations(relation_id, follow_user_id, followed_user_id) values(2, 1, 3);
+insert into relations(relation_id, follow_user_id, followed_user_id) values(3, 2, 3);
+insert into relations(relation_id, follow_user_id, followed_user_id) values(4, 3, 1);
+insert into relations(relation_id, follow_user_id, followed_user_id) values(28, 12, 1);
+insert into relations(relation_id, follow_user_id, followed_user_id) values(29, 3, 12);
 
-curl -XGET http://localhost:9000/json/list
-curl -H "Content-type: application/json" -XPOST -d '{"text":"jsonのリクエスト"}' http://localhost:9000/json/create
-curl -XPOST http://localhost:9000/json/remove/1
+ユーザリスト表示
+curl -XGET http://localhost:9000/json/user/list
+
+新規会員登録
+curl -i -H "Content-type: application/json" -XPUT -d '{"email":"hoge@gmail.com", "user_name":"hoge", "profile_text":"やっとバグ解決したよ", "password":"hogehoge"}' http://localhost:9000/json/user/create
+
+会員情報編集
+curl -i -b"PLAY_SESSION=7c3d90e1654bd15807af9f5e31bd784842c3accc-user_id=14" -XGET http://localhost:9000/json/user/edit
+
+会員情報更新
+curl -i -b"PLAY_SESSION=7c3d90e1654bd15807af9f5e31bd784842c3accc-user_id=14" -H "Content-type: application/json" -XPOST -d '{"email":"hoge@gmail.com", "user_name":"hoge", "profile_text":"バグバグ〜♪", "password":"hogehoge"}' http://localhost:9000/json/user/update
+
+ログイン
+curl -i -H "Content-type: application/json" -XGET -d '{"email":"hoge@gmail.com", "password":"testtest"}' http://localhost:9000/json/user/authenticate
+
+タイムライン取得
+curl -i -b"PLAY_SESSION=50ed505aa90a33f2b7fe8a430084a86ecc0bfdf2-user_id=12" -XGET http://localhost:9000/json/tweet/timeline
+
+自分のツイート取得
+curl -i -b"PLAY_SESSION=50ed505aa90a33f2b7fe8a430084a86ecc0bfdf2-user_id=12" -XGET http://localhost:9000/json/tweet/mylist
+
+ツイート
+curl -i -b"PLAY_SESSION=50ed505aa90a33f2b7fe8a430084a86ecc0bfdf2-user_id=12" -H "Content-type: application/json" -XPUT -d '{"tweet_id":26, "tweet_text":"これでどうだ！"}' http://localhost:9000/json/tweet/create
+
+ツイート削除
+curl -i -b"PLAY_SESSION=50ed505aa90a33f2b7fe8a430084a86ecc0bfdf2-user_id=12" -H "Content-type: application/json" -XDELETE -d '{"tweet_id":26, "tweet_text":"これでどうだ！"}' http://localhost:9000/json/tweet/delete
+
+フォローリスト
+curl -i -b"PLAY_SESSION=50ed505aa90a33f2b7fe8a430084a86ecc0bfdf2-user_id=12" -XGET http://localhost:9000/json/follow/list
+
+フォロワーリスト
+curl -i -b"PLAY_SESSION=50ed505aa90a33f2b7fe8a430084a86ecc0bfdf2-user_id=12" -XGET http://localhost:9000/json/followed/list
+
+フォロー
+curl -i -b"PLAY_SESSION=50ed505aa90a33f2b7fe8a430084a86ecc0bfdf2-user_id=12" -H "Content-type: application/json" -XPUT -d '{"relation_id":31, "followed_id":5}' http://localhost:9000/json/follow/create
+
+フォロー削除
+curl -i -b"PLAY_SESSION=50ed505aa90a33f2b7fe8a430084a86ecc0bfdf2-user_id=12" -H "Content-type: application/json" -XDELETE -d '{"relation_id":31, "followed_id":5}' http://localhost:9000/json/follow/delete
