@@ -14,6 +14,8 @@ import models.Tables._
 import javax.inject.Inject
 
 import scala.concurrent.Future
+import services.UserService
+import org.mindrot.jbcrypt.BCrypt
 
 /**
   * Created by ryoken.kojima on 2016/08/08.
@@ -76,7 +78,7 @@ class JsonUserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     * 編集画面表示
     */
   def edit = Action.async { implicit rs =>
-    val sessionUserId = rs.session.get("user_id").get.toInt
+    val sessionUserId = UserService.getSessionId(rs)
       // IDからユーザ情報を1件取得
       db.run(Users.filter(t => t.userId === sessionUserId).result.head).map { user =>
         Ok(Json.obj("user" -> user))
@@ -88,8 +90,11 @@ class JsonUserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     */
   def create = Action.async(parse.json) { implicit rs =>
     rs.body.validate[UserForm].map { form =>
+      val hashedPW = BCrypt.hashpw(form.password, BCrypt.gensalt())
+      Logger.debug(hashedPW)
+
       // OKの場合はユーザを登録
-      val user = UsersRow(0, form.user_name, form.password, form.profile_text, form.email)
+      val user = UsersRow(0, form.user_name, hashedPW, form.profile_text, form.email)
       db.run(Users += user).map { _ =>
         Ok(Json.obj("result" -> "create_success"))
       }
@@ -103,7 +108,7 @@ class JsonUserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     * 更新実行
     */
   def update = Action.async(parse.json) { implicit rs =>
-    val sessionUserId = rs.session.get("user_id").get.toInt
+    val sessionUserId = UserService.getJSSessionId(rs)
     rs.body.validate[UserForm].map { form =>
       // OKの場合はユーザ情報を更新
       val user = UsersRow(sessionUserId, form.user_name, form.password, form.profile_text, form.email)
@@ -120,7 +125,7 @@ class JsonUserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     * 削除実行
     */
   def delete = Action.async { implicit rs =>
-    val sessionUserId = rs.session.get("user_id").get.toInt
+    val sessionUserId = UserService.getSessionId(rs)
     db.run(Users.filter(t => t.userId === sessionUserId).delete).map { _ =>
       Ok(Json.obj("result" -> "delete_success"))
     }

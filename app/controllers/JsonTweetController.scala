@@ -20,7 +20,7 @@ import play.api.i18n.{I18nSupport, MessagesApi}
 import scala.concurrent.Future
 import slick.driver.MySQLDriver.api._
 import play.api.libs.json._
-import play.api.libs.json.Json
+import services.UserService
 
 object JsonTweetController {
   // フォームの値を格納するケースクラス
@@ -60,7 +60,7 @@ class JsonTweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider
     */
   def timeline = Action.async {
     implicit rs =>
-    val sessionUserId = rs.session.get("user_id").get.toInt
+    val sessionUserId = UserService.getSessionId(rs)
     val query = for {
       r <- Relations if r.followUserId === sessionUserId
       u <- Users     if u.userId       === r.followedUserId
@@ -83,7 +83,7 @@ class JsonTweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider
     * 自ツイート表示
     */
   def mylist = Action.async { implicit rs =>
-    val sessionUserId = rs.session.get("user_id").get.toInt
+    val sessionUserId = UserService.getSessionId(rs)
     db.run(Tweets.filter(t => t.userId === sessionUserId).result).map { tweets =>
       Ok(Json.obj("tweets" -> tweets))
     }
@@ -93,7 +93,7 @@ class JsonTweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider
     * 登録実行
     */
   def create = Action.async(parse.json) { implicit rs =>
-    val sessionUserId = rs.session.get("user_id").get.toInt
+    val sessionUserId = UserService.getJSSessionId(rs)
     val timestamp = new Timestamp(System.currentTimeMillis())
     rs.body.validate[TweetForm].map { form =>
       // OKの場合はツイートを登録

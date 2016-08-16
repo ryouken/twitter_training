@@ -24,7 +24,9 @@ FOREIGN KEY(followed_user_id) REFERENCES users(user_id)
 
 
 USERS
-insert into users(user_id, user_name, password, profile_text) values(1, "leo", "ryouken", "僕は天才です。");
+insert into users(user_id, email, user_name, password, profile_text) values(1, "ryoken.kojima@bizreach.co.jp", "leo", "ryouken", "僕は天才です。");
+insert into users(user_id, email, user_name, password, profile_text) values(2, "idea.matsuzaki@bizreach.co.jp", "idea", "ideaidea", "僕はいであ。");
+insert into users(user_id, email, user_name, password, profile_text) values(2, “idea.matsuzaki@bizreach.co.jp”, "idea", "ideaidea”, "松崎出愛です。”);
 insert into users(user_id, user_name, password, profile_text) values(2, "idea", "idea", "松崎出愛です。珍しい名前です。");
 insert into users(user_id, user_name, password, profile_text) values(3, "shaco-san", "haneda", "羽田です。しゃいにんぐすこーぴおんです。しゃこさんでもあります。");
 
@@ -52,7 +54,7 @@ insert into relations(relation_id, follow_user_id, followed_user_id) values(29, 
 curl -XGET http://localhost:9000/json/user/list
 
 新規会員登録
-curl -i -H "Content-type: application/json" -XPUT -d '{"email":"hoge@gmail.com", "user_name":"hoge", "profile_text":"やっとバグ解決したよ", "password":"hogehoge"}' http://localhost:9000/json/user/create
+curl -i -H "Content-type: application/json" -XPOST -d '{"email":"hoge@gmail.com", "user_name":"hoge", "profile_text":"やっとバグ解決したよ", "password":"hogehoge"}' http://localhost:9000/json/user/create
 
 会員情報編集
 curl -i -b"PLAY_SESSION=7c3d90e1654bd15807af9f5e31bd784842c3accc-user_id=14" -XGET http://localhost:9000/json/user/edit
@@ -61,25 +63,25 @@ curl -i -b"PLAY_SESSION=7c3d90e1654bd15807af9f5e31bd784842c3accc-user_id=14" -XG
 curl -i -b"PLAY_SESSION=7c3d90e1654bd15807af9f5e31bd784842c3accc-user_id=14" -H "Content-type: application/json" -XPOST -d '{"email":"hoge@gmail.com", "user_name":"hoge", "profile_text":"バグバグ〜♪", "password":"hogehoge"}' http://localhost:9000/json/user/update
 
 ログイン
-curl -i -H "Content-type: application/json" -XGET -d '{"email":"hoge@gmail.com", "password":"testtest"}' http://localhost:9000/json/user/authenticate
+curl -i -H "Content-type: application/json" -XPOST -d '{"email":"ryoken.kojima@bizreach.co.jp", "password":"ryouken"}' http://localhost:9000/json/user/authenticate
 
 タイムライン取得
 curl -i -b"PLAY_SESSION=50ed505aa90a33f2b7fe8a430084a86ecc0bfdf2-user_id=12" -XGET http://localhost:9000/json/tweet/timeline
 
 自分のツイート取得
-curl -i -b"PLAY_SESSION=50ed505aa90a33f2b7fe8a430084a86ecc0bfdf2-user_id=12" -XGET http://localhost:9000/json/tweet/mylist
+curl -i -b"PLAY_SESSION=c8a83536cdf43341724f75ac86a9f9e94fb859c6-user_id=1" -XGET http://localhost:9000/json/tweet/mylist
 
 ツイート
-curl -i -b"PLAY_SESSION=50ed505aa90a33f2b7fe8a430084a86ecc0bfdf2-user_id=12" -H "Content-type: application/json" -XPUT -d '{"tweet_id":26, "tweet_text":"これでどうだ！"}' http://localhost:9000/json/tweet/create
+curl -i -b"PLAY_SESSION=c8a83536cdf43341724f75ac86a9f9e94fb859c6-user_id=1" -H "Content-type: application/json" -XPOST -d '{"tweet_id":1, "tweet_text":"これでどうだ！"}' http://localhost:9000/json/tweet/create
 
 ツイート削除
 curl -i -b"PLAY_SESSION=50ed505aa90a33f2b7fe8a430084a86ecc0bfdf2-user_id=12" -H "Content-type: application/json" -XDELETE -d '{"tweet_id":26, "tweet_text":"これでどうだ！"}' http://localhost:9000/json/tweet/delete
 
 フォローリスト
-curl -i -b"PLAY_SESSION=50ed505aa90a33f2b7fe8a430084a86ecc0bfdf2-user_id=12" -XGET http://localhost:9000/json/follow/list
+curl -i -b"PLAY_SESSION=c8a83536cdf43341724f75ac86a9f9e94fb859c6-user_id=1" -XGET http://localhost:9000/json/follow/list
 
 フォロワーリスト
-curl -i -b"PLAY_SESSION=50ed505aa90a33f2b7fe8a430084a86ecc0bfdf2-user_id=12" -XGET http://localhost:9000/json/followed/list
+curl -i -b"PLAY_SESSION=c8a83536cdf43341724f75ac86a9f9e94fb859c6-user_id=1" -XGET http://localhost:9000/json/followed/list
 
 フォロー
 curl -i -b"PLAY_SESSION=50ed505aa90a33f2b7fe8a430084a86ecc0bfdf2-user_id=12" -H "Content-type: application/json" -XPUT -d '{"relation_id":31, "followed_id":5}' http://localhost:9000/json/follow/create

@@ -14,6 +14,7 @@ import play.api.data.Forms._
 import play.api.libs.json._
 
 import scala.concurrent.Future
+import services.UserService
 
 /**
   * Created by ryoken.kojima on 2016/08/04.
@@ -49,7 +50,7 @@ class JsonFollowController @Inject()(val dbConfigProvider: DatabaseConfigProvide
   import JsonFollowController._
 
   def followlist = Action.async { implicit rs =>
-    val sessionUserId = rs.session.get("user_id").get.toInt
+    val sessionUserId = UserService.getSessionId(rs)
     val query = for {
       r <- Relations if r.followUserId === sessionUserId
       u <- Users     if u.userId       === r.followedUserId
@@ -65,7 +66,7 @@ class JsonFollowController @Inject()(val dbConfigProvider: DatabaseConfigProvide
   }
 
   def followedlist = Action.async { implicit rs =>
-    val sessionUserId = rs.session.get("user_id").get.toInt
+    val sessionUserId = UserService.getSessionId(rs)
     val query = for {
       r <- Relations if r.followedUserId === sessionUserId
       u <- Users     if u.userId         === r.followUserId
@@ -82,7 +83,7 @@ class JsonFollowController @Inject()(val dbConfigProvider: DatabaseConfigProvide
 
   def create = Action.async(parse.json) { implicit rs =>
     rs.body.validate[FollowForm].map { form =>
-      val sessionUserId = rs.session.get("user_id").get.toInt
+      val sessionUserId = UserService.getJSSessionId(rs)
       val relation = RelationsRow(0, sessionUserId, form.followed_id)
       db.run(Relations += relation).map { _ =>
         Ok(Json.obj("result" -> "create_success"))
