@@ -15,7 +15,7 @@ import javax.inject.Inject
 
 import scala.concurrent.Future
 import services.UserService
-import org.mindrot.jbcrypt.BCrypt
+import play.api.libs.Crypto
 
 /**
   * Created by ryoken.kojima on 2016/08/08.
@@ -90,8 +90,7 @@ class JsonUserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     */
   def create = Action.async(parse.json) { implicit rs =>
     rs.body.validate[UserForm].map { form =>
-      val hashedPW = BCrypt.hashpw(form.password, BCrypt.gensalt())
-      Logger.debug(hashedPW)
+      val hashedPW = Crypto.sign(form.password)
 
       // OKの場合はユーザを登録
       val user = UsersRow(0, form.user_name, hashedPW, form.profile_text, form.email)
@@ -136,12 +135,12 @@ class JsonUserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     */
   def authenticate = Action.async(parse.json) { implicit rs =>
     rs.body.validate[LoginForm].map { form => {
-        db.run(Users.filter(t => t.email === form.email && t.password === form.password).result.headOption).map {
+      val hashedPW = Crypto.sign(form.password)
+      db.run(Users.filter(t => t.email === form.email && t.password === hashedPW).result.headOption).map {
           case Some(user) => Ok(Json.obj("result" -> "login_success")).withSession("user_id" -> user.userId.toString)
-          case _ => BadRequest(Json.obj("result" -> "login_failure"))
-        }
+          case _          => BadRequest(Json.obj("result" -> "login_failure"))
       }
-    }.recoverTotal { e =>
+    }}.recoverTotal { e =>
       // NGの場合はバリデーションエラーを返す
       Future { BadRequest(Json.obj("result" -> "failure", "error" -> JsError.toJson(e))) }
     }

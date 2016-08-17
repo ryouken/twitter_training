@@ -10,7 +10,7 @@ create table tweets(
 tweet_id int NOT NULL PRIMARY KEY AUTO_INCREMENT,
 user_id int NOT NULL,
 tweet_text varchar(300) NOT NULL,
-created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+created_at DATETIME NOT NULL,
 FOREIGN KEY(user_id) REFERENCES users(user_id)
 );
 
