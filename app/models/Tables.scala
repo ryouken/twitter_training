@@ -45,6 +45,9 @@ trait Tables {
     lazy val usersFk1 = foreignKey("relations_ibfk_1", followUserId, Users)(r => r.userId, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
     /** Foreign key referencing Users (database name relations_ibfk_2) */
     lazy val usersFk2 = foreignKey("relations_ibfk_2", followedUserId, Users)(r => r.userId, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+
+    /** Uniqueness Index over (followUserId,followedUserId) (database name follow_user_id) */
+    val index1 = index("follow_user_id", (followUserId, followedUserId), unique=true)
   }
   /** Collection-like TableQuery object for table Relations */
   lazy val Relations = new TableQuery(tag => new Relations(tag))
@@ -83,32 +86,35 @@ trait Tables {
 
   /** Entity class storing rows of table Users
    *  @param userId Database column user_id SqlType(INT), AutoInc, PrimaryKey
+   *  @param email Database column email SqlType(VARCHAR), Length(255,true)
    *  @param userName Database column user_name SqlType(VARCHAR), Length(255,true)
-   *  @param password Database column password SqlType(CHAR), Length(30,false)
-   *  @param profileText Database column profile_text SqlType(VARCHAR), Length(300,true), Default(None)
-   *  @param email Database column email SqlType(VARCHAR), Length(255,true) */
-  case class UsersRow(userId: Int, userName: String, password: String, profileText: Option[String] = None, email: String)
+   *  @param password Database column password SqlType(VARCHAR), Length(300,true)
+   *  @param profileText Database column profile_text SqlType(VARCHAR), Length(300,true), Default(None) */
+  case class UsersRow(userId: Int, email: String, userName: String, password: String, profileText: Option[String] = None)
   /** GetResult implicit for fetching UsersRow objects using plain SQL queries */
   implicit def GetResultUsersRow(implicit e0: GR[Int], e1: GR[String], e2: GR[Option[String]]): GR[UsersRow] = GR{
     prs => import prs._
-    UsersRow.tupled((<<[Int], <<[String], <<[String], <<?[String], <<[String]))
+    UsersRow.tupled((<<[Int], <<[String], <<[String], <<[String], <<?[String]))
   }
   /** Table description of table users. Objects of this class serve as prototypes for rows in queries. */
   class Users(_tableTag: Tag) extends Table[UsersRow](_tableTag, "users") {
-    def * = (userId, userName, password, profileText, email) <> (UsersRow.tupled, UsersRow.unapply)
+    def * = (userId, email, userName, password, profileText) <> (UsersRow.tupled, UsersRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(userId), Rep.Some(userName), Rep.Some(password), profileText, Rep.Some(email)).shaped.<>({r=>import r._; _1.map(_=> UsersRow.tupled((_1.get, _2.get, _3.get, _4, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(userId), Rep.Some(email), Rep.Some(userName), Rep.Some(password), profileText).shaped.<>({r=>import r._; _1.map(_=> UsersRow.tupled((_1.get, _2.get, _3.get, _4.get, _5)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column user_id SqlType(INT), AutoInc, PrimaryKey */
     val userId: Rep[Int] = column[Int]("user_id", O.AutoInc, O.PrimaryKey)
-    /** Database column user_name SqlType(VARCHAR), Length(255,true) */
-    val userName: Rep[String] = column[String]("user_name", O.Length(255,varying=true))
-    /** Database column password SqlType(CHAR), Length(30,false) */
-    val password: Rep[String] = column[String]("password", O.Length(30,varying=false))
-    /** Database column profile_text SqlType(VARCHAR), Length(300,true), Default(None) */
-    val profileText: Rep[Option[String]] = column[Option[String]]("profile_text", O.Length(300,varying=true), O.Default(None))
     /** Database column email SqlType(VARCHAR), Length(255,true) */
     val email: Rep[String] = column[String]("email", O.Length(255,varying=true))
+    /** Database column user_name SqlType(VARCHAR), Length(255,true) */
+    val userName: Rep[String] = column[String]("user_name", O.Length(255,varying=true))
+    /** Database column password SqlType(VARCHAR), Length(300,true) */
+    val password: Rep[String] = column[String]("password", O.Length(300,varying=true))
+    /** Database column profile_text SqlType(VARCHAR), Length(300,true), Default(None) */
+    val profileText: Rep[Option[String]] = column[Option[String]]("profile_text", O.Length(300,varying=true), O.Default(None))
+
+    /** Uniqueness Index over (email) (database name email) */
+    val index1 = index("email", email, unique=true)
   }
   /** Collection-like TableQuery object for table Users */
   lazy val Users = new TableQuery(tag => new Users(tag))

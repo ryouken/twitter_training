@@ -66,7 +66,7 @@ class JsonTweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider
       u <- Users     if u.userId       === r.followedUserId
       t <- Tweets    if t.userId       === r.followedUserId
     } yield (t.tweetId, u.userName, t.tweetText)
-    db.run(query.result).map { seq =>
+    db.run(query.sortBy(t => t._1.desc).result).map { seq =>
       val json = Json.toJson(
         seq.map{ t =>
           Map(
@@ -84,7 +84,7 @@ class JsonTweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider
     */
   def mylist = Action.async { implicit rs =>
     val sessionUserId = UserService.getSessionId(rs)
-    db.run(Tweets.filter(t => t.userId === sessionUserId).result).map { tweets =>
+    db.run(Tweets.filter(t => t.userId === sessionUserId).sortBy(t => t.tweetId.desc).result).map { tweets =>
       Ok(Json.obj("tweets" -> tweets))
     }
   }

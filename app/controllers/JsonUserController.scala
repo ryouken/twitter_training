@@ -68,8 +68,30 @@ class JsonUserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
   /**
     * 一覧表示
     */
+////  select * from users left join relations on users.user_id = relations.followed_user_id where follow_user_id != 3;
+//  def list = Action.async { implicit rs =>
+//    val sessionUserId = UserService.getSessionId(rs)
+////    val query = Users.joinLeft(Relations).on(_.userId === _.followedUserId).filterNot(_._1.userId === sessionUserId)
+//
+//    val query = for {
+//      r <- Relations if r.followUserId === sessionUserId
+//      u <- Users     if u.userId       =!= r.followedUserId
+//    } yield (u.userId, u.userName, u.profileText)
+//    Logger.debug(query.toString())
+//    db.run(query.result).map { seq =>
+//      val json = Json.toJson(
+//        seq.map{ s =>
+//          Map("user_id" -> s._1.toString, "user_name" -> s._2, "profile_text" -> s._3.getOrElse(""))
+//        }
+//      )
+//      Logger.debug(json.toString())
+//      Ok(json)
+//    }
+//  }
+
   def list = Action.async { implicit rs =>
-    db.run(Users.result).map { users =>
+    val sessionUserId = UserService.getSessionId(rs)
+    db.run(Users.filterNot(t => t.userId === sessionUserId).sortBy(t => t.userId.desc).result).map { users =>
       Ok(Json.obj("users" -> users))
     }
   }
@@ -91,12 +113,10 @@ class JsonUserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
   def create = Action.async(parse.json) { implicit rs =>
     rs.body.validate[UserForm].map { form =>
       val hashedPW = Crypto.sign(form.password)
-
-      // OKの場合はユーザを登録
-      val user = UsersRow(0, form.user_name, hashedPW, form.profile_text, form.email)
-      db.run(Users += user).map { _ =>
-        Ok(Json.obj("result" -> "create_success"))
-      }
+      val user = UsersRow(0, form.email, form.user_name, hashedPW, form.profile_text)
+        db.run(Users += user).map { _ =>
+          Ok(Json.obj("result" -> "create_success"))
+        }
     }.recoverTotal { e =>
       // NGの場合はバリデーションエラーを返す
       Future { BadRequest(Json.obj("result" -> "create_failure", "error" -> JsError.toJson(e))) }
@@ -109,8 +129,9 @@ class JsonUserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
   def update = Action.async(parse.json) { implicit rs =>
     val sessionUserId = UserService.getJSSessionId(rs)
     rs.body.validate[UserForm].map { form =>
+      val hashedPW = Crypto.sign(form.password)
       // OKの場合はユーザ情報を更新
-      val user = UsersRow(sessionUserId, form.user_name, form.password, form.profile_text, form.email)
+      val user = UsersRow(sessionUserId, form.email, form.user_name, hashedPW, form.profile_text)
       db.run(Users.filter(t => t.userId === sessionUserId).update(user)).map { u =>
         Ok(Json.obj("result" -> "update_success"))
       }
@@ -142,7 +163,7 @@ class JsonUserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
       }
     }}.recoverTotal { e =>
       // NGの場合はバリデーションエラーを返す
-      Future { BadRequest(Json.obj("result" -> "failure", "error" -> JsError.toJson(e))) }
+      Future { BadRequest(Json.obj("result" -> "login_failure", "error" -> JsError.toJson(e))) }
     }
   }
 

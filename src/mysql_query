@@ -1,8 +1,8 @@
 create table users(
 user_id int NOT NULL PRIMARY KEY AUTO_INCREMENT,
-email varchar(255) NOT NULL,
+email varchar(255) NOT NULL UNIQUE,
 user_name varchar(255) NOT NULL,
-password char(30) NOT NULL,
+password varchar(300) NOT NULL,
 profile_text varchar(300)
 );
 
@@ -19,7 +19,8 @@ relation_id int NOT NULL PRIMARY KEY AUTO_INCREMENT,
 follow_user_id int NOT NULL,
 followed_user_id int NOT NULL,
 FOREIGN KEY(follow_user_id) REFERENCES users(user_id),
-FOREIGN KEY(followed_user_id) REFERENCES users(user_id)
+FOREIGN KEY(followed_user_id) REFERENCES users(user_id),
+UNIQUE(follow_user_id, followed_user_id)
 );
 
 
