@@ -61,38 +61,21 @@ object JsonUserController {
 }
 
 class JsonUserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
-                               val messagesApi: MessagesApi) extends Controller
+                                   val messagesApi: MessagesApi) extends Controller
   with HasDatabaseConfigProvider[JdbcProfile] with I18nSupport {
   import JsonUserController._
 
   /**
     * 一覧表示
     */
-////  select * from users left join relations on users.user_id = relations.followed_user_id where follow_user_id != 3;
-//  def list = Action.async { implicit rs =>
-//    val sessionUserId = UserService.getSessionId(rs)
-////    val query = Users.joinLeft(Relations).on(_.userId === _.followedUserId).filterNot(_._1.userId === sessionUserId)
-//
-//    val query = for {
-//      r <- Relations if r.followUserId === sessionUserId
-//      u <- Users     if u.userId       =!= r.followedUserId
-//    } yield (u.userId, u.userName, u.profileText)
-//    Logger.debug(query.toString())
-//    db.run(query.result).map { seq =>
-//      val json = Json.toJson(
-//        seq.map{ s =>
-//          Map("user_id" -> s._1.toString, "user_name" -> s._2, "profile_text" -> s._3.getOrElse(""))
-//        }
-//      )
-//      Logger.debug(json.toString())
-//      Ok(json)
-//    }
-//  }
-
-  def list = Action.async { implicit rs =>
+  def list = Action.async { implicit  rs =>
     val sessionUserId = UserService.getSessionId(rs)
-    db.run(Users.filterNot(t => t.userId === sessionUserId).sortBy(t => t.userId.desc).result).map { users =>
-      Ok(Json.obj("users" -> users))
+    val q = Relations.filter(_.followUserId === sessionUserId).map(_.followedUserId)
+    val query = for {
+      u <- Users.filterNot(u => u.userId in q)
+    } yield u
+    db.run(query.filterNot(u => u.userId === sessionUserId).sortBy(u => u.userId.desc)result).map { s =>
+      Ok(Json.obj("users" -> s))
     }
   }
 
@@ -101,9 +84,9 @@ class JsonUserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     */
   def edit = Action.async { implicit rs =>
     val sessionUserId = UserService.getSessionId(rs)
-      // IDからユーザ情報を1件取得
-      db.run(Users.filter(t => t.userId === sessionUserId).result.head).map { user =>
-        Ok(Json.obj("user" -> user))
+    // IDからユーザ情報を1件取得
+    db.run(Users.filter(t => t.userId === sessionUserId).result.head).map { user =>
+      Ok(Json.obj("user" -> user))
     }
   }
 
@@ -114,9 +97,9 @@ class JsonUserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     rs.body.validate[UserForm].map { form =>
       val hashedPW = Crypto.sign(form.password)
       val user = UsersRow(0, form.email, form.user_name, hashedPW, form.profile_text)
-        db.run(Users += user).map { _ =>
-          Ok(Json.obj("result" -> "create_success"))
-        }
+      db.run(Users += user).map { _ =>
+        Ok(Json.obj("result" -> "create_success"))
+      }
     }.recoverTotal { e =>
       // NGの場合はバリデーションエラーを返す
       Future { BadRequest(Json.obj("result" -> "create_failure", "error" -> JsError.toJson(e))) }
@@ -151,15 +134,15 @@ class JsonUserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     }
   }
 
-    /**
+  /**
     * ログイン認証実行
     */
   def authenticate = Action.async(parse.json) { implicit rs =>
     rs.body.validate[LoginForm].map { form => {
       val hashedPW = Crypto.sign(form.password)
       db.run(Users.filter(t => t.email === form.email && t.password === hashedPW).result.headOption).map {
-          case Some(user) => Ok(Json.obj("result" -> "login_success")).withSession("user_id" -> user.userId.toString)
-          case _          => BadRequest(Json.obj("result" -> "login_failure"))
+        case Some(user) => Ok(Json.obj("result" -> "login_success")).withSession("user_id" -> user.userId.toString)
+        case _          => BadRequest(Json.obj("result" -> "login_failure"))
       }
     }}.recoverTotal { e =>
       // NGの場合はバリデーションエラーを返す

@@ -23,6 +23,16 @@ FOREIGN KEY(followed_user_id) REFERENCES users(user_id),
 UNIQUE(follow_user_id, followed_user_id)
 );
 
+create table replies(
+reply_id int NOT NULL PRIMARY KEY AUTO_INCREMENT,
+user_id int NOT NULL,
+tweet_id int NOT NULL,
+reply_text varchar(300) NOT NULL,
+FOREIGN KEY(user_id) REFERENCES users(user_id),
+FOREIGN KEY(tweet_id) REFERENCES tweets(tweet_id),
+UNIQUE(user_id, tweet_id)
+);
+
 
 USERS
 insert into users(user_id, email, user_name, password, profile_text) values(1, "ryoken.kojima@bizreach.co.jp", "leo", "ryouken", "僕は天才です。");

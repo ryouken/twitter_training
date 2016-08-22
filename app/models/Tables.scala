@@ -14,7 +14,7 @@ trait Tables {
   import slick.jdbc.{GetResult => GR}
 
   /** DDL for all tables. Call .create to execute. */
-  lazy val schema: profile.SchemaDescription = Relations.schema ++ Tweets.schema ++ Users.schema
+  lazy val schema: profile.SchemaDescription = Relations.schema ++ Replies.schema ++ Tweets.schema ++ Users.schema
   @deprecated("Use .schema instead of .ddl", "3.0")
   def ddl = schema
 
@@ -51,6 +51,43 @@ trait Tables {
   }
   /** Collection-like TableQuery object for table Relations */
   lazy val Relations = new TableQuery(tag => new Relations(tag))
+
+  /** Entity class storing rows of table Replies
+   *  @param replyId Database column reply_id SqlType(INT), AutoInc, PrimaryKey
+   *  @param userId Database column user_id SqlType(INT)
+   *  @param tweetId Database column tweet_id SqlType(INT)
+   *  @param replyText Database column reply_text SqlType(VARCHAR), Length(300,true) */
+  case class RepliesRow(replyId: Int, userId: Int, tweetId: Int, replyText: String)
+  /** GetResult implicit for fetching RepliesRow objects using plain SQL queries */
+  implicit def GetResultRepliesRow(implicit e0: GR[Int], e1: GR[String]): GR[RepliesRow] = GR{
+    prs => import prs._
+    RepliesRow.tupled((<<[Int], <<[Int], <<[Int], <<[String]))
+  }
+  /** Table description of table replies. Objects of this class serve as prototypes for rows in queries. */
+  class Replies(_tableTag: Tag) extends Table[RepliesRow](_tableTag, "replies") {
+    def * = (replyId, userId, tweetId, replyText) <> (RepliesRow.tupled, RepliesRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(replyId), Rep.Some(userId), Rep.Some(tweetId), Rep.Some(replyText)).shaped.<>({r=>import r._; _1.map(_=> RepliesRow.tupled((_1.get, _2.get, _3.get, _4.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column reply_id SqlType(INT), AutoInc, PrimaryKey */
+    val replyId: Rep[Int] = column[Int]("reply_id", O.AutoInc, O.PrimaryKey)
+    /** Database column user_id SqlType(INT) */
+    val userId: Rep[Int] = column[Int]("user_id")
+    /** Database column tweet_id SqlType(INT) */
+    val tweetId: Rep[Int] = column[Int]("tweet_id")
+    /** Database column reply_text SqlType(VARCHAR), Length(300,true) */
+    val replyText: Rep[String] = column[String]("reply_text", O.Length(300,varying=true))
+
+    /** Foreign key referencing Tweets (database name replies_ibfk_2) */
+    lazy val tweetsFk = foreignKey("replies_ibfk_2", tweetId, Tweets)(r => r.tweetId, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    /** Foreign key referencing Users (database name replies_ibfk_1) */
+    lazy val usersFk = foreignKey("replies_ibfk_1", userId, Users)(r => r.userId, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+
+    /** Uniqueness Index over (userId,tweetId) (database name user_id) */
+    val index1 = index("user_id", (userId, tweetId), unique=true)
+  }
+  /** Collection-like TableQuery object for table Replies */
+  lazy val Replies = new TableQuery(tag => new Replies(tag))
 
   /** Entity class storing rows of table Tweets
    *  @param tweetId Database column tweet_id SqlType(INT), AutoInc, PrimaryKey

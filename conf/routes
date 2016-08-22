@@ -24,6 +24,10 @@ GET     /json/followed/list         controllers.JsonFollowController.followedlis
 POST    /json/follow/create         controllers.JsonFollowController.create
 DELETE  /json/follow/delete         controllers.JsonFollowController.delete
 
+# JSON Reply API
+POST    /json/reply/create          controllers.JsonReplyController.create
+DELETE  /json/reply/delete          controllers.JsonReplyController.delete
+
 # Tweet
 #GET     /tweet/timeline             controllers.TweetController.timeline
 #GET     /tweet/mylist               controllers.TweetController.mylist

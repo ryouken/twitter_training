@@ -5,18 +5,15 @@ package controllers
   */
 
 import java.sql.Timestamp
-
 import play.api.mvc._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.db.slick._
 import slick.driver.JdbcProfile
 import models.Tables._
 import javax.inject.Inject
-
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.{I18nSupport, MessagesApi}
-
 import scala.concurrent.Future
 import slick.driver.MySQLDriver.api._
 import play.api.libs.json._
@@ -40,6 +37,39 @@ object JsonTweetController {
     }
   }
 
+  implicit val usersRowWritesFormat = new Writes[UsersRow]{
+    def writes(user: UsersRow): JsValue = {
+      Json.obj(
+        "user_id"        -> user.userId,
+        "email"          -> user.email,
+        "user_name"      -> user.userName,
+        "password"       -> user.password,
+        "profile_text"   -> user.profileText
+      )
+    }
+  }
+
+  implicit val relationsRowWritesFormat = new Writes[RelationsRow]{
+    def writes(relation: RelationsRow): JsValue = {
+      Json.obj(
+        "relation_id"       -> relation.relationId,
+        "follow_user_id"    -> relation.followUserId,
+        "followed_user_id"  -> relation.followedUserId
+      )
+    }
+  }
+
+  implicit val repliesRowWritesFormat = new Writes[RepliesRow]{
+    def writes(reply: RepliesRow): JsValue = {
+      Json.obj(
+        "reply_id"   -> reply.replyId,
+        "user_id"    -> reply.userId,
+        "tweet_id"   -> reply.tweetId,
+        "reply_text" -> reply.replyText
+      )
+    }
+  }
+
   // formから送信されたデータ ⇔ ケースクラスの変換を行う
   val tweetForm = Form(
     mapping(
@@ -51,28 +81,28 @@ object JsonTweetController {
 }
 
 class JsonTweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
-                                val messagesApi: MessagesApi) extends Controller
+                                    val messagesApi: MessagesApi) extends Controller
   with HasDatabaseConfigProvider[JdbcProfile] with I18nSupport {
   import JsonTweetController._
 
-  /**
-    * タイムライン表示
-    */
-  def timeline = Action.async {
-    implicit rs =>
+  def timeline = Action.async { implicit rs =>
     val sessionUserId = UserService.getSessionId(rs)
-    val query = for {
-      r <- Relations if r.followUserId === sessionUserId
-      u <- Users     if u.userId       === r.followedUserId
-      t <- Tweets    if t.userId       === r.followedUserId
-    } yield (t.tweetId, u.userName, t.tweetText)
-    db.run(query.sortBy(t => t._1.desc).result).map { seq =>
+    db.run(Tweets.join(Relations).on(_.userId === _.followedUserId)
+      .join(Users).on(_._1.userId === _.userId)
+      .filter(_._1._2.followUserId === sessionUserId)
+      .joinLeft(Replies).on(_._1._1.tweetId === _.tweetId)
+      .joinLeft(Users).on(_._2.map(t => t.userId) === _.userId)
+      .result).map { t =>
       val json = Json.toJson(
-        seq.map{ t =>
+        t.map { tt =>
           Map(
-            "tweet_id" -> t._1.toString,
-            "user_name" -> t._2,
-            "tweet_text" -> t._3)
+            "tweet_id"        -> tt._1._1._1._1.tweetId.toString,
+            "tweet_user_name" -> tt._1._1._2.userName,
+            "tweet_text"      -> tt._1._1._1._1.tweetText,
+            "reply_id"        -> tt._1._2.map(rp => rp.replyId).toString,
+            "reply_user_name" -> tt._2.map(u => u.userName).toString,
+            "reply_text"      -> tt._1._2.map(rp => rp.replyText).toString
+          )
         }
       )
       Ok(json)
@@ -84,8 +114,10 @@ class JsonTweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider
     */
   def mylist = Action.async { implicit rs =>
     val sessionUserId = UserService.getSessionId(rs)
-    db.run(Tweets.filter(t => t.userId === sessionUserId).sortBy(t => t.tweetId.desc).result).map { tweets =>
-      Ok(Json.obj("tweets" -> tweets))
+    db.run(Tweets.filter(t => t.userId === sessionUserId).sortBy(t => t.tweetId.desc).result).flatMap { tweets =>
+      db.run(Users.result).map { users =>
+        Ok(Json.obj("tweets" -> tweets, "users" -> users))
+      }
     }
   }
 
