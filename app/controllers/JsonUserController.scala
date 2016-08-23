@@ -12,7 +12,6 @@ import slick.driver.JdbcProfile
 import slick.driver.MySQLDriver.api._
 import models.Tables._
 import javax.inject.Inject
-
 import scala.concurrent.Future
 import services.UserService
 import play.api.libs.Crypto
@@ -22,6 +21,7 @@ import play.api.libs.Crypto
   */
 object JsonUserController {
 
+  // TODO フォーム
   // フォームの値を格納するケースクラス
   case class UserForm(user_id: Int, email: String, user_name: String, password: String, profile_text: Option[String])
   case class LoginForm(email: String, password: String)
@@ -74,8 +74,8 @@ class JsonUserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     val query = for {
       u <- Users.filterNot(u => u.userId in q)
     } yield u
-    db.run(query.filterNot(u => u.userId === sessionUserId).sortBy(u => u.userId.desc)result).map { s =>
-      Ok(Json.obj("users" -> s))
+    db.run(query.filterNot(u => u.userId === sessionUserId).sortBy(u => u.userId.desc)result).map { u =>
+      Ok(Json.obj("users" -> u))
     }
   }
 
@@ -93,6 +93,8 @@ class JsonUserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
   /**
     * 登録実行
     */
+  // TODO Crypt使わない
+  // TODO service層との切り分け
   def create = Action.async(parse.json) { implicit rs =>
     rs.body.validate[UserForm].map { form =>
       val hashedPW = Crypto.sign(form.password)
@@ -109,6 +111,8 @@ class JsonUserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
   /**
     * 更新実行
     */
+  // TODO Crypt使わない
+  // TODO service層との切り分け
   def update = Action.async(parse.json) { implicit rs =>
     val sessionUserId = UserService.getJSSessionId(rs)
     rs.body.validate[UserForm].map { form =>

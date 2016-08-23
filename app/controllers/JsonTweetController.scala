@@ -20,6 +20,7 @@ import play.api.libs.json._
 import services.UserService
 
 object JsonTweetController {
+  // TODO フォーム精査
   // フォームの値を格納するケースクラス
   case class TweetForm(tweet_id: Int, tweet_text: String)
 
@@ -77,7 +78,6 @@ object JsonTweetController {
       "tweet_text" -> nonEmptyText(maxLength = 140)
     )(TweetForm.apply)(TweetForm.unapply)
   )
-
 }
 
 class JsonTweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
@@ -85,6 +85,7 @@ class JsonTweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider
   with HasDatabaseConfigProvider[JdbcProfile] with I18nSupport {
   import JsonTweetController._
 
+  // Mapはおかしい
   def timeline = Action.async { implicit rs =>
     val sessionUserId = UserService.getSessionId(rs)
     db.run(Tweets.join(Relations).on(_.userId === _.followedUserId)
@@ -119,6 +120,7 @@ class JsonTweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider
   /**
     * 登録実行
     */
+  // TODO createでセッション付与できるように
   def create = Action.async(parse.json) { implicit rs =>
     val sessionUserId = UserService.getJSSessionId(rs)
     val timestamp = new Timestamp(System.currentTimeMillis())

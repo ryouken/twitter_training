@@ -8,6 +8,7 @@ import play.api.mvc._
   */
 object UserService {
 
+  // TODO getしない
   def getSessionId(rs: Request[AnyContent]) = { rs.session.get("user_id").get.toInt }
   def getJSSessionId(rs: Request[JsValue]) = { rs.session.get("user_id").get.toInt }
 
