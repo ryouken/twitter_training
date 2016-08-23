@@ -14,3 +14,30 @@
 サーバー側やること
 ・環境変数
 ・ステータスコード
+
+
+#!/bin/sh
+monitorInterval=9
+bootWait=30
+partOfProgramName="twitter_server"
+while true
+do
+  isAlive=`ps -ef | grep $partOfProgramName | grep -v grep | wc -l`
+  if [ $isAlive = 1 ]; then
+    echo "[起動中]: $partOfProgramName `date`"
+  else
+    echo "[停止]: $partOfProgramName `date`"
+    flag=true
+    while $flag
+    do
+      echo "[再起動中]: $partOfProgramName"
+      isRebooted=`ps -ef | grep $partOfProgramName | grep -v grep | wc -l`
+      if [ $isRebooted = 1 ]; then
+        flag=false
+      fi
+      sleep $bootWait
+      /home/ec2-user/twitter_training-1.0-SNAPSHOT/bin/twitter_training
+    done
+  fi
+  sleep $monitorInterval
+done

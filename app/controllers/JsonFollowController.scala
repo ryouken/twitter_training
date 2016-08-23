@@ -70,11 +70,11 @@ class JsonFollowController @Inject()(val dbConfigProvider: DatabaseConfigProvide
     val query = for {
       r <- Relations if r.followedUserId === sessionUserId
       u <- Users     if u.userId         === r.followUserId
-    } yield (u.userName, u.profileText, r.relationId)
+    } yield (u.userName, u.profileText, r.relationId, u.userId)
     db.run(query.sortBy(r => r._3.desc).result).map { seq =>
       val json = Json.toJson(
         seq.map{ s =>
-          Map("user_name" -> s._1, "profile_text" -> s._2.getOrElse(""))
+          Map("user_name" -> s._1, "profile_text" -> s._2.getOrElse(""), "user_id" -> s._4.toString)
         }
       )
       Ok(json)

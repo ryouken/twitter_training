@@ -90,18 +90,13 @@ class JsonTweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider
     db.run(Tweets.join(Relations).on(_.userId === _.followedUserId)
       .join(Users).on(_._1.userId === _.userId)
       .filter(_._1._2.followUserId === sessionUserId)
-      .joinLeft(Replies).on(_._1._1.tweetId === _.tweetId)
-      .joinLeft(Users).on(_._2.map(t => t.userId) === _.userId)
-      .result).map { t =>
+      .sortBy(t => t._1._1.tweetId.desc).result).map { t =>
       val json = Json.toJson(
         t.map { tt =>
           Map(
-            "tweet_id"        -> tt._1._1._1._1.tweetId.toString,
-            "tweet_user_name" -> tt._1._1._2.userName,
-            "tweet_text"      -> tt._1._1._1._1.tweetText,
-            "reply_id"        -> tt._1._2.map(rp => rp.replyId).toString,
-            "reply_user_name" -> tt._2.map(u => u.userName).toString,
-            "reply_text"      -> tt._1._2.map(rp => rp.replyText).toString
+            "tweet_id"        -> tt._1._1.tweetId.toString,
+            "tweet_user_name" -> tt._2.userName,
+            "tweet_text"      -> tt._1._1.tweetText
           )
         }
       )

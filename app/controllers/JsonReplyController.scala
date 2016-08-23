@@ -22,8 +22,10 @@ import services.UserService
 object JsonReplyController {
   // フォームの値を格納するケースクラス
   case class ReplyCreateForm(reply_id: Int, tweet_id: Int, reply_text: String)
+  case class ReplyListForm(tweet_id: Int)
 
   implicit val replyCreateFormFormat = Json.format[ReplyCreateForm]
+  implicit val replyListFormFormat = Json.format[ReplyListForm]
 
 //   ReplysRowをJSONに変換するためのWritesを定義
   implicit val repliesRowWritesFormat = new Writes[RepliesRow]{
@@ -38,6 +40,11 @@ object JsonReplyController {
   }
 
   // formから送信されたデータ ⇔ ケースクラスの変換を行う
+  val replyListForm = Form(
+    mapping(
+      "tweet_id" -> number
+    )(ReplyListForm.apply)(ReplyListForm.unapply)
+  )
 
   val replyCreateForm = Form(
     mapping(
@@ -53,6 +60,30 @@ class JsonReplyController @Inject()(val dbConfigProvider: DatabaseConfigProvider
                                     val messagesApi: MessagesApi) extends Controller
   with HasDatabaseConfigProvider[JdbcProfile] with I18nSupport {
   import JsonReplyController._
+
+  /**
+    * リスト表示
+    */
+  def list = Action.async(parse.json) { implicit rs =>
+    rs.body.validate[ReplyListForm].map { form =>
+      db.run(Replies.filter(rp => rp.tweetId === form.tweet_id)
+                    .join(Users).on(_.userId === _.userId)
+                    .sortBy(rp => rp._1.replyId.asc).result).map { t =>
+        val json = Json.toJson(
+          t.map { tt =>
+            Map(
+              "reply_id"        -> tt._1.replyId.toString,
+              "reply_user_name" -> tt._2.userName,
+              "reply_text"      -> tt._1.replyText
+            )
+          }
+        )
+        Ok(json)
+      }
+    }.recoverTotal { e =>
+      Future { BadRequest(Json.obj("result" -> "delete_failure", "error" -> JsError.toJson(e))) }
+    }
+  }
 
   /**
     * 登録実行
@@ -77,7 +108,7 @@ class JsonReplyController @Inject()(val dbConfigProvider: DatabaseConfigProvider
   def delete = TODO
   //  def delete = Action.async(parse.json) { implicit rs =>
   //    rs.body.validate[ReplyForm].map { form =>
-  //      db.run(Replys.filter(t => t.replyId === form.reply_id.bind).delete).map { _ =>
+  //      db.run(Replies.filter(t => t.replyId === form.reply_id.bind).delete).map { _ =>
   //        Ok(Json.obj("result" -> "delete_success"))
   //      }
   //    }.recoverTotal { e =>

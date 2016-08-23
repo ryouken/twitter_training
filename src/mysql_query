@@ -34,33 +34,6 @@ UNIQUE(user_id, tweet_id)
 );
 
 
-USERS
-insert into users(user_id, email, user_name, password, profile_text) values(1, "ryoken.kojima@bizreach.co.jp", "leo", "ryouken", "僕は天才です。");
-insert into users(user_id, email, user_name, password, profile_text) values(2, "idea.matsuzaki@bizreach.co.jp", "idea", "ideaidea", "僕はいであ。");
-insert into users(user_id, email, user_name, password, profile_text) values(2, “idea.matsuzaki@bizreach.co.jp”, "idea", "ideaidea”, "松崎出愛です。”);
-insert into users(user_id, user_name, password, profile_text) values(2, "idea", "idea", "松崎出愛です。珍しい名前です。");
-insert into users(user_id, user_name, password, profile_text) values(3, "shaco-san", "haneda", "羽田です。しゃいにんぐすこーぴおんです。しゃこさんでもあります。");
-
-TWEETS
-insert into tweets(tweet_id, user_id, tweet_text, timestamp) values(1, 1, "ついったー課題なう", '2016-08-02');
-insert into tweets(tweet_id, user_id, tweet_text, timestamp) values(2, 1, "お腹減ったな", '2016-08-01');
-insert into tweets(tweet_id, user_id, tweet_text, timestamp) values(3, 2, "I AM a Girl", '2016-04-02');
-insert into tweets(tweet_id, user_id, tweet_text, timestamp) values(4, 3, "うぇいうぇい", '2016-08-02');
-insert into tweets(tweet_id, user_id, tweet_text, timestamp) values(0, 2, "I AM a Stupid", '2016-04-02');
-insert into tweets(tweet_id, user_id, tweet_text, timestamp) values(0, 3, "I AM a Boy", '2016-04-02');
-insert into tweets(tweet_id, user_id, tweet_text, timestamp) values(0, 6, "I AM a Champion", '2016-04-02');
-insert into tweets(tweet_id, user_id, tweet_text, timestamp) values(0, 2, "おっほっほ", '2016-08-02');
-insert into tweets(tweet_id, user_id, tweet_text, timestamp) values(0, 3, "つぇいつぇい", '2016-08-02');
-insert into tweets(tweet_id, user_id, tweet_text, timestamp) values(0, 6, "ずいずい", '2016-08-02');
-
-RELATIONSHIPS
-insert into relations(relation_id, follow_user_id, followed_user_id) values(1, 1, 2);
-insert into relations(relation_id, follow_user_id, followed_user_id) values(2, 1, 3);
-insert into relations(relation_id, follow_user_id, followed_user_id) values(3, 2, 3);
-insert into relations(relation_id, follow_user_id, followed_user_id) values(4, 3, 1);
-insert into relations(relation_id, follow_user_id, followed_user_id) values(28, 12, 1);
-insert into relations(relation_id, follow_user_id, followed_user_id) values(29, 3, 12);
-
 ユーザリスト表示
 curl -XGET http://localhost:9000/json/user/list
 
@@ -81,6 +54,7 @@ curl -i -b"PLAY_SESSION=50ed505aa90a33f2b7fe8a430084a86ecc0bfdf2-user_id=12" -XG
 
 自分のツイート取得
 curl -i -b"PLAY_SESSION=c8a83536cdf43341724f75ac86a9f9e94fb859c6-user_id=1" -XGET http://localhost:9000/json/tweet/mylist
+curl -i -H "Content-type: application/json" -d'{"tweet_id": 37}' -XGET http://localhost:9000/json/reply/list
 
 ツイート
 curl -i -b"PLAY_SESSION=c8a83536cdf43341724f75ac86a9f9e94fb859c6-user_id=1" -H "Content-type: application/json" -XPOST -d '{"tweet_id":1, "tweet_text":"これでどうだ！"}' http://localhost:9000/json/tweet/create
