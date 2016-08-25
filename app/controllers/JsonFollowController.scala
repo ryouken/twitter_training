@@ -9,8 +9,6 @@ import slick.driver.MySQLDriver.api._
 import models.Tables._
 import javax.inject.Inject
 
-import play.api.data.Form
-import play.api.data.Forms._
 import play.api.libs.json._
 
 import scala.concurrent.Future
@@ -19,29 +17,10 @@ import services.UserService
 /**
   * Created by ryoken.kojima on 2016/08/04.
   */
-
+// TODO バリデーション
 object JsonFollowController {
-  case class FollowList(userName: String, profileText: Option[String])
   case class FollowForm(relation_id: Int, followed_id: Int)
-
   implicit val FollowFormFormat  = Json.format[FollowForm]
-
-  implicit val relationsRowWritesFormat = new Writes[RelationsRow]{
-    def writes(relation: RelationsRow): JsValue = {
-      Json.obj(
-        "relation_id"       -> relation.relationId,
-        "follow_user_id"    -> relation.followUserId,
-        "followed_user_id"  -> relation.followedUserId
-      )
-    }
-  }
-
-  val followForm = Form(
-    mapping(
-      "relation_id"   -> number,
-      "followed_id"   -> number
-    )(FollowForm.apply)(FollowForm.unapply)
-  )
 }
 
 class JsonFollowController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
@@ -49,6 +28,7 @@ class JsonFollowController @Inject()(val dbConfigProvider: DatabaseConfigProvide
   with HasDatabaseConfigProvider[JdbcProfile] with I18nSupport {
   import JsonFollowController._
 
+  // TODO Mapおかしい
   def followlist = Action.async { implicit rs =>
     val sessionUserId = UserService.getSessionId(rs)
     val query = for {
@@ -65,6 +45,7 @@ class JsonFollowController @Inject()(val dbConfigProvider: DatabaseConfigProvide
     }
   }
 
+  // TODO Mapおかしい
   def followedlist = Action.async { implicit rs =>
     val sessionUserId = UserService.getSessionId(rs)
     val query = for {
@@ -89,7 +70,6 @@ class JsonFollowController @Inject()(val dbConfigProvider: DatabaseConfigProvide
         Ok(Json.obj("result" -> "create_success"))
       }
     }.recoverTotal { e =>
-      // NGの場合はバリデーションエラーを返す
       Future { BadRequest(Json.obj("result" -> "create_failure", "error" -> JsError.toJson(e))) }
     }
   }
