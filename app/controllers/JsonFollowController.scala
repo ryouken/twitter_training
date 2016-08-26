@@ -20,7 +20,28 @@ import services.UserService
 // TODO バリデーション
 object JsonFollowController {
   case class FollowForm(relation_id: Int, followed_id: Int)
-  implicit val FollowFormFormat  = Json.format[FollowForm]
+  case class FollowListForm(relation_id:Int, user_name:String, profile_text: Option[String])
+  case class FollowedListForm(user_id: Int, user_name: String, profile_text: Option[String])
+
+  implicit val FollowFormFormat = Json.format[FollowForm]
+  implicit val FollowListWritesFormat = new Writes[FollowListForm]{
+    def writes(followlist: FollowListForm): JsValue = {
+      Json.obj(
+        "relation_id"  -> followlist.relation_id,
+        "user_name"    -> followlist.user_name,
+        "profile_text" -> followlist.profile_text
+      )
+    }
+  }
+  implicit val FollowedListWritesFormat = new Writes[FollowedListForm]{
+    def writes(followedlist: FollowedListForm): JsValue = {
+      Json.obj(
+        "user_id"      -> followedlist.user_id,
+        "user_name"    -> followedlist.user_name,
+        "profile_text" -> followedlist.profile_text
+      )
+    }
+  }
 }
 
 class JsonFollowController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
@@ -28,37 +49,31 @@ class JsonFollowController @Inject()(val dbConfigProvider: DatabaseConfigProvide
   with HasDatabaseConfigProvider[JdbcProfile] with I18nSupport {
   import JsonFollowController._
 
-  // TODO Mapおかしい
   def followlist = Action.async { implicit rs =>
     val sessionUserId = UserService.getSessionId(rs)
     val query = for {
       r <- Relations if r.followUserId === sessionUserId
-      u <- Users     if u.userId       === r.followedUserId
-    } yield (u.userName, u.profileText, r.relationId)
+      u <- Users if u.userId === r.followedUserId
+    } yield (r.relationId, u.userName, u.profileText)
     db.run(query.sortBy(r => r._3.desc).result).map { seq =>
-      val json = Json.toJson(
-        seq.map{ s =>
-          Map("user_name" -> s._1, "profile_text" -> s._2.getOrElse(""))
-        }
-      )
-      Ok(json)
+      val json = seq.map { t =>
+        FollowListForm(t._1, t._2, t._3)
+      }
+      Ok(Json.obj("follow" -> json))
     }
   }
 
-  // TODO Mapおかしい
   def followedlist = Action.async { implicit rs =>
     val sessionUserId = UserService.getSessionId(rs)
     val query = for {
       r <- Relations if r.followedUserId === sessionUserId
       u <- Users     if u.userId         === r.followUserId
-    } yield (u.userName, u.profileText, r.relationId, u.userId)
-    db.run(query.sortBy(r => r._3.desc).result).map { seq =>
-      val json = Json.toJson(
-        seq.map{ s =>
-          Map("user_name" -> s._1, "profile_text" -> s._2.getOrElse(""), "user_id" -> s._4.toString)
+    } yield (u.userId, u.userName, u.profileText, r.relationId)
+    db.run(query.sortBy(r => r._4.desc).result).map { seq =>
+      val json = seq.map { t =>
+          FollowedListForm(t._1, t._2, t._3)
         }
-      )
-      Ok(json)
+      Ok(Json.obj("followed" -> json))
     }
   }
 

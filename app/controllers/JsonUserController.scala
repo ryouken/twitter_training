@@ -9,6 +9,9 @@ import slick.driver.JdbcProfile
 import slick.driver.MySQLDriver.api._
 import models.Tables._
 import javax.inject.Inject
+
+import play.api.Logger
+
 import scala.concurrent.Future
 import services.UserService
 import play.api.libs.Crypto
@@ -23,8 +26,6 @@ object JsonUserController {
 
   implicit val userFormFormat  = Json.format[UserForm]
   implicit val loginFormFormat = Json.format[LoginForm]
-
-  // UsersRowをJSONに変換するためのWritesを定義
   implicit val usersRowWritesFormat = new Writes[UsersRow]{
     def writes(user: UsersRow): JsValue = {
       Json.obj(
@@ -61,10 +62,15 @@ class JsonUserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
   /**
     * 編集画面表示
     */
+  // TODO 共通処理をメソッド化
   def edit = Action.async { implicit rs =>
-    val sessionUserId = UserService.getSessionId(rs)
-    db.run(Users.filter(t => t.userId === sessionUserId).result.head).map { user =>
-      Ok(Json.obj("user" -> user))
+    UserService.getSessionId(rs) match {
+      case Some(id) => {
+        db.run(Users.filter(t => t.userId === id).result.head).map { user =>
+          Ok(Json.obj("user" -> user))
+        }
+      }
+      case _ => Future{ BadRequest(Json.obj("result" -> "failure")) }
     }
   }
 
@@ -73,6 +79,7 @@ class JsonUserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     */
   // TODO Crypt使わない
   // TODO service層との切り分け
+  // TODO createでセッション付与できるように
   def create = Action.async(parse.json) { implicit rs =>
     rs.body.validate[UserForm].map { form =>
       val hashedPW = Crypto.sign(form.password)
@@ -95,7 +102,7 @@ class JsonUserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     rs.body.validate[UserForm].map { form =>
       val hashedPW = Crypto.sign(form.password)
       val user = UsersRow(sessionUserId, form.email, form.user_name, hashedPW, form.profile_text)
-      db.run(Users.filter(t => t.userId === sessionUserId).update(user)).map { u =>
+      db.run(Users.filter(_.userId === sessionUserId).update(user)).map { u =>
         Ok(Json.obj("result" -> "update_success"))
       }
     }.recoverTotal { e =>
@@ -108,7 +115,7 @@ class JsonUserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     */
   def delete = Action.async { implicit rs =>
     val sessionUserId = UserService.getSessionId(rs)
-    db.run(Users.filter(t => t.userId === sessionUserId).delete).map { _ =>
+    db.run(Users.filter(_.userId === sessionUserId).delete).map { _ =>
       Ok(Json.obj("result" -> "delete_success"))
     }
   }
@@ -117,6 +124,7 @@ class JsonUserController @Inject()(val dbConfigProvider: DatabaseConfigProvider,
     * ログイン認証実行
     */
   // TODO BadRequestを同じものを送っている
+  // TODO Crypt使わない
   def authenticate = Action.async(parse.json) { implicit rs =>
     rs.body.validate[LoginForm].map { form => {
       val hashedPW = Crypto.sign(form.password)

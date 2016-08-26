@@ -25,7 +25,7 @@ POST    /json/follow/create         controllers.JsonFollowController.create
 DELETE  /json/follow/delete         controllers.JsonFollowController.delete
 
 # JSON Reply API
-POST    /json/reply/list           controllers.JsonReplyController.list
+POST    /json/reply/list            controllers.JsonReplyController.list
 POST    /json/reply/create          controllers.JsonReplyController.create
 DELETE  /json/reply/delete          controllers.JsonReplyController.delete
 

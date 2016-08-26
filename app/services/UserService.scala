@@ -19,8 +19,12 @@ import scala.concurrent.Future
   */
 object UserService {
   // TODO getしない
-  def getSessionId(rs: Request[AnyContent]) = { rs.session.get("user_id").get.toInt }
-  def getJSSessionId(rs: Request[JsValue]) = { rs.session.get("user_id").get.toInt }
+  def getSessionId(rs: Request[AnyContent]) = {
+    rs.session.get("user_id").map(_.toInt)
+  }
+  def getJSSessionId(rs: Request[JsValue]) = {
+    rs.session.get("user_id").getOrElse("").toInt
+  }
 }
 //
 //class UserService @Inject()(dbConfigProvider: DatabaseConfigProvider,

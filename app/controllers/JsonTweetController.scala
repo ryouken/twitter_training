@@ -18,11 +18,10 @@ import services.UserService
   */
 // TODO バリデーション
 object JsonTweetController {
-  // フォームの値を格納するケースクラス
   case class TweetForm(tweet_id: Int, tweet_text: String)
-  implicit val tweetFormFormat = Json.format[TweetForm]
+  case class TimelineForm(tweet_id: Int, tweet_user_name: String, tweet_text: String)
 
-//   TweetsRowをJSONに変換するためのWritesを定義
+  implicit val tweetFormFormat = Json.format[TweetForm]
   implicit val tweetsRowWritesFormat = new Writes[TweetsRow]{
     def writes(tweet: TweetsRow): JsValue = {
       Json.obj(
@@ -30,6 +29,15 @@ object JsonTweetController {
         "user_id"     -> tweet.userId,
         "tweet_text"  -> tweet.tweetText,
         "created_at"  -> tweet.createdAt
+      )
+    }
+  }
+  implicit val timelineWritesFormat = new Writes[TimelineForm]{
+    def writes(tweet: TimelineForm): JsValue = {
+      Json.obj(
+        "tweet_id"        -> tweet.tweet_id,
+        "tweet_user_name" -> tweet.tweet_user_name,
+        "tweet_text"      -> tweet.tweet_text
       )
     }
   }
@@ -41,23 +49,16 @@ class JsonTweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider
   with HasDatabaseConfigProvider[JdbcProfile] with I18nSupport {
   import JsonTweetController._
 
-  // TODO Mapはおかしい
   def timeline = Action.async { implicit rs =>
     val sessionUserId = UserService.getSessionId(rs)
     db.run(Tweets.join(Relations).on(_.userId === _.followedUserId)
       .join(Users).on(_._1.userId === _.userId)
       .filter(_._1._2.followUserId === sessionUserId)
-      .sortBy(t => t._1._1.tweetId.desc).result).map { t =>
-      val json = Json.toJson(
-        t.map { tt =>
-          Map(
-            "tweet_id"        -> tt._1._1.tweetId.toString,
-            "tweet_user_name" -> tt._2.userName,
-            "tweet_text"      -> tt._1._1.tweetText
-          )
+      .sortBy(t => t._1._1.tweetId.desc).result).map { seq =>
+        val json = seq.map { t =>
+          TimelineForm(t._1._1.tweetId, t._2.userName, t._1._1.tweetText)
         }
-      )
-      Ok(json)
+      Ok(Json.obj("timeline" -> json))
     }
   }
 
@@ -74,7 +75,6 @@ class JsonTweetController @Inject()(val dbConfigProvider: DatabaseConfigProvider
   /**
     * 登録実行
     */
-  // TODO createでセッション付与できるように
   def create = Action.async(parse.json) { implicit rs =>
     val sessionUserId = UserService.getJSSessionId(rs)
     val timestamp = new Timestamp(System.currentTimeMillis())
